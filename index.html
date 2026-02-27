@@ -1,3 +1,874 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Diario de bordo v3.0</title>
+<style>
+    :root {
+        --sculk-green: #00ff9c;
+        --sculk-cyan: #0ae7ff;
+        --deep-void: #0a0a0a;
+        --dark-gray: #1a1a1a;
+        --text-gray: #cccccc;
+        --blood-red: #ff3b3b;
+        --alert-yellow: #ffd700;
+        --experiment-purple: #a042ff;
+        --sanity-blue: #4d8cff;
+        --tab-gray: #2a2a2a;
+        --luxury-gold: #FFD700;
+        --luxury-purple: #9370DB;
+        --desire-red: #FF6B6B;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        background-color: var(--deep-void);
+        color: var(--sculk-green);
+        font-family: 'Consolas', 'Monaco', monospace;
+        height: 100vh;
+        overflow: hidden;
+        position: relative;
+    }
+
+    /* Modo sobrevivência - efeitos de corrupção */
+    .corruption-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 9999;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .corruption-1 {
+        background: radial-gradient(circle at 30% 50%, rgba(160, 66, 255, 0.1) 0%, transparent 50%);
+    }
+
+    .corruption-2 {
+        background: radial-gradient(circle at 70% 30%, rgba(255, 59, 59, 0.1) 0%, transparent 50%);
+    }
+
+    /* Interface principal */
+    .app-container {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        padding: 10px;
+        gap: 10px;
+    }
+
+    /* Barra superior com múltiplas funcionalidades */
+    .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        background-color: rgba(26, 26, 26, 0.9);
+        border-radius: 4px;
+        border: 1px solid rgba(0, 255, 156, 0.1);
+    }
+
+    .system-info {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+    }
+
+    .stat-display {
+        display: flex;
+        gap: 15px;
+    }
+
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12px;
+    }
+
+    .stat-bar {
+        width: 60px;
+        height: 6px;
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+        overflow: hidden;
+    }
+
+    .stat-fill {
+        height: 100%;
+        transition: width 0.3s;
+    }
+
+    .sanity-fill { background-color: var(--sanity-blue); }
+    .progress-fill { background-color: var(--sculk-green); }
+    .corruption-fill { background-color: var(--experiment-purple); }
+
+    /* Sistema de abas */
+    .tab-system {
+        display: flex;
+        background-color: var(--tab-gray);
+        border-radius: 4px 4px 0 0;
+        overflow: hidden;
+    }
+
+    .tab {
+        padding: 10px 20px;
+        cursor: pointer;
+        background-color: var(--dark-gray);
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        transition: background-color 0.2s;
+    }
+
+    .tab.active {
+        background-color: var(--deep-void);
+        border-bottom: 2px solid var(--sculk-green);
+    }
+
+    .tab:hover:not(.active) {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Conteúdo das abas */
+    .tab-content {
+        display: none;
+        flex: 1;
+        overflow: hidden;
+    }
+
+    .tab-content.active {
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Área principal (Terminal) */
+    #terminal-tab {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .terminal-log {
+        flex: 1;
+        overflow-y: auto;
+        padding: 15px;
+        background-color: rgba(10, 10, 10, 0.8);
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    .log-line {
+        margin-bottom: 8px;
+        white-space: pre-wrap;
+        word-break: break-word;
+        animation: fadeIn 0.3s;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    /* Área de mídia */
+    #media-tab {
+        padding: 20px;
+        overflow-y: auto;
+    }
+
+    .media-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 15px;
+        padding: 10px;
+    }
+
+    .media-item {
+        background-color: var(--dark-gray);
+        border-radius: 4px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.2s;
+        border: 1px solid rgba(0, 255, 156, 0.1);
+    }
+
+    .media-item:hover {
+        transform: translateY(-2px);
+        border-color: var(--sculk-green);
+    }
+
+    .media-preview {
+        width: 100%;
+        height: 150px;
+        background-color: rgba(0, 0, 0, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 40px;
+    }
+
+    .media-info {
+        padding: 10px;
+        font-size: 12px;
+    }
+
+    /* Área de mapa */
+    #map-tab {
+        padding: 20px;
+        position: relative;
+    }
+
+    .map-container {
+        width: 100%;
+        height: 100%;
+        background-color: var(--dark-gray);
+        border-radius: 4px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .map-node {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .map-node:hover {
+        transform: scale(1.5);
+        z-index: 10;
+    }
+
+    .map-node.lab { background-color: var(--sculk-green); }
+    .map-node.experiment { background-color: var(--blood-red); }
+    .map-node.sculk { background-color: var(--experiment-purple); }
+    .map-node.containment { background-color: var(--alert-yellow); }
+    .map-node.luxury { background-color: var(--luxury-gold); }
+
+    /* Área de estatísticas */
+    #stats-tab {
+        padding: 20px;
+        overflow-y: auto;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .stats-card {
+        background-color: var(--dark-gray);
+        padding: 20px;
+        border-radius: 4px;
+        border: 1px solid rgba(0, 255, 156, 0.1);
+    }
+
+    .stats-title {
+        color: var(--sculk-cyan);
+        margin-bottom: 15px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid rgba(0, 255, 156, 0.2);
+    }
+
+    .achievement-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .achievement {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px;
+        background-color: rgba(0, 0, 0, 0.3);
+        border-radius: 3px;
+    }
+
+    .achievement.unlocked {
+        border-left: 3px solid var(--alert-yellow);
+    }
+
+    .achievement.locked {
+        opacity: 0.5;
+        filter: grayscale(1);
+    }
+
+    /* Input area */
+    .input-area {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        background-color: var(--dark-gray);
+        border-radius: 4px;
+        margin-top: 10px;
+        border: 1px solid rgba(0, 255, 156, 0.1);
+    }
+
+    .prompt {
+        color: var(--sculk-cyan);
+        margin-right: 10px;
+        font-weight: bold;
+        min-width: 160px;
+    }
+
+    #command-input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: var(--sculk-green);
+        font-family: inherit;
+        font-size: 14px;
+        outline: none;
+        padding: 5px 0;
+    }
+
+    /* Modos de jogo */
+    .game-mode-selector {
+        display: flex;
+        gap: 10px;
+        margin-left: 20px;
+    }
+
+    .mode-btn {
+        padding: 6px 12px;
+        background-color: rgba(0, 255, 156, 0.1);
+        border: 1px solid var(--sculk-green);
+        border-radius: 3px;
+        color: var(--sculk-green);
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.2s;
+    }
+
+    .mode-btn:hover {
+        background-color: rgba(0, 255, 156, 0.2);
+    }
+
+    .mode-btn.active {
+        background-color: var(--sculk-green);
+        color: var(--deep-void);
+    }
+
+    /* Sistema de puzzles */
+    .puzzle-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.9);
+        z-index: 10000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .puzzle-container {
+        background-color: var(--dark-gray);
+        padding: 30px;
+        border-radius: 8px;
+        border: 2px solid var(--experiment-purple);
+        max-width: 600px;
+        width: 90%;
+    }
+
+    .puzzle-title {
+        color: var(--experiment-purple);
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    .puzzle-content {
+        margin-bottom: 20px;
+    }
+
+    .puzzle-input {
+        width: 100%;
+        padding: 10px;
+        background-color: rgba(0, 0, 0, 0.5);
+        border: 1px solid var(--sculk-green);
+        color: var(--sculk-green);
+        font-family: inherit;
+        margin-bottom: 15px;
+    }
+
+    .puzzle-buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+    }
+
+    /* Classes de estilo para logs */
+    .error { color: var(--blood-red); }
+    .warning { color: var(--alert-yellow); }
+    .success { color: var(--sculk-green); }
+    .highlight { color: var(--sculk-cyan); }
+    .info { color: var(--text-gray); }
+    .purple { color: var(--experiment-purple); }
+    .blue { color: var(--sanity-blue); }
+    .gold { color: var(--luxury-gold); }
+    .luxury-purple { color: var(--luxury-purple); }
+
+    /* Scrollbar */
+    .terminal-log::-webkit-scrollbar,
+    #media-tab::-webkit-scrollbar,
+    #stats-tab::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .terminal-log::-webkit-scrollbar-track,
+    #media-tab::-webkit-scrollbar-track,
+    #stats-tab::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.2);
+    }
+
+    .terminal-log::-webkit-scrollbar-thumb,
+    #media-tab::-webkit-scrollbar-thumb,
+    #stats-tab::-webkit-scrollbar-thumb {
+        background: var(--sculk-green);
+        border-radius: 4px;
+    }
+
+    /* Animações */
+    @keyframes pulse {
+        0%, 100% { opacity: 0.5; }
+        50% { opacity: 1; }
+    }
+
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+        20%, 40%, 60%, 80% { transform: translateX(5px); }
+    }
+
+    @keyframes desirePulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; color: var(--desire-red); }
+    }
+
+    .pulse {
+        animation: pulse 2s infinite;
+    }
+
+    .shake {
+        animation: shake 0.5s;
+    }
+
+    .desire-pulse {
+        animation: desirePulse 2s infinite;
+    }
+
+    /* Responsividade */
+    @media (max-width: 1200px) {
+        .stat-display {
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .game-mode-selector {
+            flex-wrap: wrap;
+        }
+    }
+    
+    /* =========================
+       OLHO DO ABISMO
+    ========================= */
+    #void-eye-container {
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(circle at center, #111 0%, #000 70%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 20000;
+        animation: voidFadeOut 4s ease forwards;
+        animation-delay: 6s;
+    }
+
+    #void-eye {
+        width: 320px;
+        opacity: 0;
+        animation:
+            eyeAppear 2s ease forwards,
+            eyeFloat 6s ease-in-out infinite,
+            eyePulse 4s ease-in-out infinite;
+        animation-delay: 1s;
+        filter:
+            drop-shadow(0 0 25px rgba(255, 215, 0, 0.4))
+            drop-shadow(0 0 60px rgba(160, 66, 255, 0.2));
+    }
+
+    /* Aparição lenta */
+    @keyframes eyeAppear {
+        from {
+            opacity: 0;
+            transform: scale(0.8);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    /* Flutuação antinatural */
+    @keyframes eyeFloat {
+        0%, 100% {
+            transform: translateY(0) scale(1);
+        }
+        50% {
+            transform: translateY(-12px) scale(1.02);
+        }
+    }
+
+    /* Pulso de consciência */
+    @keyframes eyePulse {
+        0%, 100% {
+            filter:
+                drop-shadow(0 0 20px rgba(255, 215, 0, 0.3))
+                drop-shadow(0 0 50px rgba(160, 66, 255, 0.15));
+        }
+        50% {
+            filter:
+                drop-shadow(0 0 40px rgba(255, 215, 0, 0.6))
+                drop-shadow(0 0 90px rgba(160, 66, 255, 0.4));
+        }
+    }
+
+    @keyframes greedPulse {
+        0%, 100% { 
+            filter: 
+                drop-shadow(0 0 30px rgba(255, 215, 0, 0.6))
+                drop-shadow(0 0 70px rgba(160, 66, 255, 0.4))
+                drop-shadow(0 0 120px rgba(255, 59, 59, 0.2));
+        }
+        50% { 
+            filter: 
+                drop-shadow(0 0 50px rgba(255, 215, 0, 0.9))
+                drop-shadow(0 0 100px rgba(160, 66, 255, 0.6))
+                drop-shadow(0 0 180px rgba(255, 59, 59, 0.4));
+        }
+    }
+
+    /* Desaparecer no vazio */
+    @keyframes voidFadeOut {
+        to {
+            opacity: 0;
+            visibility: hidden;
+        }
+    }
+    
+    /* =========================
+       EFEITOS DE GLITCH
+    ========================= */
+    .glitch-effect {
+        position: relative;
+        animation: glitch 0.3s infinite;
+    }
+
+    @keyframes glitch {
+        0% {
+            transform: translate(0);
+            text-shadow: 0 0 0 rgba(255, 0, 0, 0);
+        }
+        20% {
+            transform: translate(-2px, 2px);
+            text-shadow: 2px 0 5px rgba(255, 0, 0, 0.5);
+        }
+        40% {
+            transform: translate(2px, -1px);
+            text-shadow: -2px 0 5px rgba(0, 255, 156, 0.5);
+        }
+        60% {
+            transform: translate(-1px, 1px);
+            text-shadow: 0 2px 5px rgba(160, 66, 255, 0.5);
+        }
+        80% {
+            transform: translate(1px, -2px);
+            text-shadow: 0 -2px 5px rgba(255, 59, 59, 0.5);
+        }
+        100% {
+            transform: translate(0);
+            text-shadow: 0 0 0 rgba(255, 0, 0, 0);
+        }
+    }
+
+    /* =========================
+       SANGUE ESCORRENDO
+    ========================= */
+    .blood-effect {
+        position: fixed;
+        pointer-events: none;
+        z-index: 9998;
+        opacity: 0;
+    }
+
+    .blood-drip {
+        position: absolute;
+        background: linear-gradient(to bottom, 
+            transparent 0%, 
+            var(--blood-red) 10%, 
+            rgba(139, 0, 0, 0.8) 30%, 
+            transparent 100%);
+        width: 3px;
+        animation: drip 15s linear forwards;
+    }
+
+    @keyframes drip {
+        0% {
+            height: 0;
+            top: -10px;
+            opacity: 1;
+        }
+        90% {
+            opacity: 0.8;
+        }
+        100% {
+            height: 110vh;
+            top: 100vh;
+            opacity: 0;
+        }
+    }
+
+    /* =========================
+       OLHOS NO FUNDO
+    ========================= */
+    .eye-background {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: -1;
+        opacity: 0;
+        transition: opacity 2s;
+    }
+
+    .eye {
+        position: absolute;
+        width: 40px;
+        height: 40px;
+        background: radial-gradient(circle at 30% 30%, 
+            rgba(255, 255, 255, 0.1) 0%,
+            rgba(160, 66, 255, 0.05) 30%,
+            transparent 70%);
+        border-radius: 50%;
+        box-shadow: 
+            0 0 20px rgba(160, 66, 255, 0.3),
+            inset 0 0 10px rgba(255, 255, 255, 0.1);
+        animation: eyeBlink 5s infinite;
+    }
+
+    .eye::before {
+        content: '';
+        position: absolute;
+        width: 15px;
+        height: 15px;
+        background: rgba(0, 255, 156, 0.3);
+        border-radius: 50%;
+        top: 12px;
+        left: 12px;
+        animation: pupilMove 10s infinite alternate;
+    }
+
+    @keyframes eyeBlink {
+        0%, 96%, 100% { transform: scaleY(1); }
+        98% { transform: scaleY(0.1); }
+    }
+
+    @keyframes pupilMove {
+        0% { transform: translate(0, 0); }
+        25% { transform: translate(5px, 5px); }
+        50% { transform: translate(-5px, -5px); }
+        75% { transform: translate(3px, -3px); }
+        100% { transform: translate(-3px, 3px); }
+    }
+
+    /* =========================
+       RESPIRAÇÃO DO TERMINAL
+    ========================= */
+    .breathing-text {
+        animation: breathe 4s ease-in-out infinite;
+    }
+
+    @keyframes breathe {
+        0%, 100% {
+            opacity: 0.7;
+            transform: scale(1);
+        }
+        50% {
+            opacity: 1;
+            transform: scale(1.02);
+        }
+    }
+
+    /* =========================
+       TREMEDEIRA (SANIDADE BAIXA)
+    ========================= */
+    .low-sanity-shake {
+        animation: sanityShake 0.5s infinite;
+    }
+
+    @keyframes sanityShake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-1px); }
+        20%, 40%, 60%, 80% { transform: translateX(1px); }
+    }
+
+    /* =========================
+       PULSO DE CORRUPÇÃO
+    ========================= */
+    .corruption-pulse {
+        animation: corruptionPulse 3s infinite;
+    }
+
+    @keyframes corruptionPulse {
+        0%, 100% { 
+            box-shadow: 0 0 5px rgba(160, 66, 255, 0.1);
+        }
+        50% { 
+            box-shadow: 0 0 20px rgba(160, 66, 255, 0.4);
+        }
+    }
+
+    /* =========================
+       EFEITOS ESPECIAIS DO GRIMM
+    ========================= */
+    @keyframes grimmBlue {
+        0%, 100% { color: var(--sculk-cyan); }
+        50% { color: #4a9eff; }
+    }
+
+    @keyframes panteraGlow {
+        0%, 100% { box-shadow: 0 0 10px rgba(74, 158, 255, 0.3); }
+        50% { box-shadow: 0 0 25px rgba(74, 158, 255, 0.7); }
+    }
+
+    .grimm-effect {
+        animation: grimmBlue 2s infinite;
+    }
+
+    .pantera-glow {
+        animation: panteraGlow 3s infinite;
+    }
+</style>
+</head>
+<body>
+    <!-- Efeitos Visuais -->
+<div id="blood-container" class="blood-effect"></div>
+<div id="eye-background" class="eye-background"></div>
+<div id="glitch-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:9997; opacity:0; background:linear-gradient(transparent 50%, rgba(255,0,0,0.02) 50%); background-size:100% 4px; mix-blend-mode:overlay;"></div>
+
+<!-- Sistema de Áudio -->
+<audio id="typing-sound" preload="auto" style="display:none;"></audio>
+<audio id="whisper-sound" preload="auto" style="display:none;"></audio>
+<audio id="heartbeat-sound" preload="auto" style="display:none;" loop></audio>
+<audio id="ambient-sound" preload="auto" style="display:none;" loop></audio>
+<audio id="glitch-sound" preload="auto" style="display:none;"></audio>
+<audio id="blood-drip-sound" preload="auto" style="display:none;"></audio>
+    
+<div id="void-eye-container">
+    <img src="olhos da ganancia.png" id="void-eye">
+</div>
+
+    <!-- Overlays -->
+    <div class="corruption-overlay corruption-1"></div>
+    <div class="corruption-overlay corruption-2"></div>
+    
+    <!-- Puzzle Overlay -->
+    <div class="puzzle-overlay" id="puzzle-overlay">
+        <div class="puzzle-container">
+            <div class="puzzle-title" id="puzzle-title">ENIGMA DO ABISMO</div>
+            <div class="puzzle-content" id="puzzle-content"></div>
+            <input type="text" class="puzzle-input" id="puzzle-input" placeholder="Sua resposta...">
+            <div class="puzzle-buttons">
+                <button class="mode-btn" onclick="submitPuzzle()">Enviar</button>
+                <button class="mode-btn" onclick="closePuzzle()" style="background-color: rgba(255, 59, 59, 0.1); border-color: var(--blood-red); color: var(--blood-red);">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div class="app-container">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="system-info">
+                <div class="system-title">DIÁRIO DE BORDO v3.0</div>
+                <div class="game-mode-selector">
+                    <div class="mode-btn" data-mode="story" onclick="changeGameMode('story')">HISTÓRIA</div>
+                    <div class="mode-btn" data-mode="investigation" onclick="changeGameMode('investigation')">INVESTIGAÇÃO</div>
+                    <div class="mode-btn" data-mode="survival" onclick="changeGameMode('survival')">SOBREVIVÊNCIA</div>
+                </div>
+            </div>
+            
+            <div class="stat-display">
+                <div class="stat-item">
+                    <span>SAÚDE MENTAL</span>
+                    <div class="stat-bar">
+                        <div class="stat-fill sanity-fill" id="sanity-bar"></div>
+                    </div>
+                    <span id="sanity-value">80%</span>
+                </div>
+                <div class="stat-item">
+                    <span>PROGRESSO</span>
+                    <div class="stat-bar">
+                        <div class="stat-fill progress-fill" id="progress-bar"></div>
+                    </div>
+                    <span id="progress-value">30%</span>
+                </div>
+                <div class="stat-item">
+                    <span>CORRUPÇÃO</span>
+                    <div class="stat-bar">
+                        <div class="stat-fill corruption-fill" id="corruption-bar"></div>
+                    </div>
+                    <span id="corruption-value">10%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab System -->
+        <div class="tab-system">
+            <div class="tab active" data-tab="terminal" onclick="changeTab('terminal')">TERMINAL</div>
+            <div class="tab" data-tab="media" onclick="changeTab('media')">MÍDIA</div>
+            <div class="tab" data-tab="map" onclick="changeTab('map')">MAPA</div>
+            <div class="tab" data-tab="stats" onclick="changeTab('stats')">ESTATÍSTICAS</div>
+        </div>
+
+        <!-- Tab Contents -->
+        <div class="tab-content active" id="terminal-tab">
+            <div class="terminal-log" id="terminal-log"></div>
+            <div class="input-area">
+                <div class="prompt" id="prompt">pesquisador@lab:~$</div>
+                <input type="text" id="command-input" autofocus autocomplete="off" placeholder="Digite 'help' para começar...">
+            </div>
+        </div>
+
+        <div class="tab-content" id="media-tab">
+            <div class="media-grid" id="media-grid">
+                <!-- Media items will be inserted here -->
+            </div>
+        </div>
+
+        <div class="tab-content" id="map-tab">
+            <div class="map-container" id="map-container">
+                <!-- Map nodes will be inserted here -->
+            </div>
+        </div>
+
+        <div class="tab-content" id="stats-tab">
+            <div class="stats-grid" id="stats-grid">
+                <!-- Statistics will be inserted here -->
+            </div>
+        </div>
+    </div>
+
 <script>
 // ==================== CONSTANTES E DADOS ====================
 const GameState = {
@@ -46,13 +917,7 @@ const achievementsList = {
     'Encontro do Abismo': { description: 'Viu o confronto entre Grimm e Violet', unlocked: false },
     'Cachorro Domado': { description: 'Testemunhou a humilhação de Grimm', unlocked: false },
     'Última dos Castello': { description: 'Conheceu a origem miserável de Mira Castello', unlocked: false },
-    'Conhecedor da Besta': { description: 'Descobriu toda a história de Grimm', unlocked: false },
-    'Príncipe do Banquete': { description: 'Conheceu a origem trágica de Abel Donquixote', unlocked: false },
-    'Patricida Nobre': { description: 'Testemunhou o estancamento da linhagem', unlocked: false },
-    'Sobrevivente do Vazio': { description: 'Acompanhou a travessia de Seraph', unlocked: false },
-    'Nova Gula': { description: 'Viu a ascensão do pecado da Gula', unlocked: false },
-    'Mestre de Cerimônias': { description: 'Compreendeu o código de Abel', unlocked: false },
-    'Peso da Alma': { description: 'Absorveu a filosofia existencial de Abel', unlocked: false }
+    'Conhecedor da Besta': { description: 'Descobriu toda a história de Grimm', unlocked: false }
 };
 
 const mediaItems = {
@@ -1120,14 +1985,6 @@ const commands = {
             addLog('pacto_cachorrinho   - O pacto e a humilhação final', 'blue');
             addLog('', 'info');
             
-            addLog('<span class="experiment-purple">ABEL DONQUIXOTE - A GULA 👑:</span>', 'experiment-purple');
-            addLog('abel_origem        - A nobreza traída de Abel Donquixote', 'experiment-purple');
-            addLog('abel_seraph        - A travessia com Seraph', 'experiment-purple');
-            addLog('abel_gula          - A ascensão do Novo Gula', 'experiment-purple');
-            addLog('abel_pacto         - O pacto com Violet', 'experiment-purple');
-            addLog('abel_filosofia     - A filosofia do peso e da realeza', 'experiment-purple');
-            addLog('', 'info');
-            
             addLog('<span class="blue">COMANDOS BÁSICOS:</span>', 'info');
             addLog('help        - Mostrar esta ajuda', 'info');
             addLog('clear       - Limpar terminal', 'info');
@@ -1447,7 +2304,7 @@ ORIGEM: Desconhecida.`
             addLog('"Mas claro, tinha aqueles mesquinhos"', 'warning');
             addLog('"que insistiam que eu estava mentindo"', 'warning');
             addLog('"e que uma mulher não poderia fazer"', 'warning');
-            addLog('"quaisquer atos desses!"', 'warning');
+            addLog('"quaisquer atos desses!"</span>', 'warning');
             addLog('', 'info');
             
             addLog('<span class="luxury-purple">A ASCENSÃO:</span>', 'luxury-purple');
@@ -1568,7 +2425,7 @@ ORIGEM: Desconhecida.`
             addLog('"com a minha mãe."', 'luxury-purple');
             addLog('', 'luxury-purple');
             addLog('"Não entendi o que ela queria,"', 'luxury-purple');
-            addLog('"e muito menos o que veio fazer aqui."', 'luxury-purple');
+            addLog('"e muito menos o que veio fazer aqui."</span>', 'luxury-purple');
             addLog('"Só aceitei..."', 'luxury-purple');
             
             addLog('', 'info');
@@ -2089,271 +2946,6 @@ ORIGEM: Desconhecida.`
                 addLog('<span class="warning">[SISTEMA] Níveis de sanidade ajustados</span>', 'warning');
             }, 2000);
         }
-    },
-    
-    // ==================== ABEL DONQUIXOTE - A GULA ====================
-    abel_origem: {
-        description: 'A nobreza traída de Abel Donquixote',
-        execute: () => {
-            addLog('<span class="gold">=== ABEL DONQUIXOTE - O BANQUETE DO EXÍLIO ===</span>', 'info');
-            
-            addLog('<span class="luxury-purple">O HERDEIRO DOS REINOS ANTIGOS:</span>', 'luxury-purple');
-            addLog('"Abel nasceu em um universo de reinos antigos."', 'luxury-purple');
-            addLog('"Herdeiro da linhagem Donquixote."', 'luxury-purple');
-            addLog('"Sua vida foi marcada pelo ato que ele mais despreza:"', 'luxury-purple');
-            addLog('"A **"nobreza"** de seu pai."', 'luxury-purple');
-            
-            addLog('', 'info');
-            
-            addLog('<span class="warning">O PECADO DO PAI:</span>', 'warning');
-            addLog('"O pai abdicou de TODO poder e status."', 'warning');
-            addLog('"Viver uma vida de bondade e pobreza."', 'warning');
-            addLog('"Para Abel, isso não foi sacrifício."', 'warning');
-            addLog('"Foi **"vazamento de substância"**."', 'warning');
-            addLog('"Tornaram-se irrelevantes. Vulneráveis."', 'warning');
-            
-            addLog('', 'info');
-            
-            addLog('<span class="blood-red">O ESTANCAMENTO:</span>', 'error');
-            addLog('"Para interromper a ruína da família..."', 'error');
-            addLog('"Abel cometeu o PATRICÍDIO."', 'error');
-            addLog('"Não por ódio."', 'error');
-            addLog('"Por lógica fria."', 'error');
-            addLog('"O pai era o último obstáculo."', 'error');
-            addLog('"Para retomar o **"peso"** do nome."', 'error');
-            
-            addLog('', 'info');
-            
-            addLog('<span class="experiment-purple">A EXPULSÃO:</span>', 'purple');
-            addLog('"Sua fome por poder o levou ao exílio."', 'purple');
-            addLog('"Expulso de seu universo original."', 'purple');
-            addLog('"Lançado para ALÉM da barreira."', 'purple');
-            addLog('"Para o mundo que protegia contra..."', 'purple');
-            addLog('"O **SCULK**. O vazio devorador."', 'purple');
-            
-            addLog('', 'info');
-            
-            addLog('<span class="gold">⚔️ O primeiro ato de um rei sem coroa.</span>', 'gold');
-            
-            addXP(20);
-            unlockAchievement('Príncipe do Banquete');
-            unlockAchievement('Patricida Nobre');
-            
-            GameState.sanity -= 15;
-            GameState.corruption += 10;
-            updateStats();
-        }
-    },
-
-    abel_seraph: {
-        description: 'A travessia com Seraph',
-        execute: () => {
-            addLog('<span class="gold">=== A TRAVESSIA DE SERAPH ===</span>', 'info');
-            
-            addLog('<span class="blue">À BEIRA DA ANIQUILAÇÃO:</span>', 'blue');
-            addLog('"O vazio o consumia."', 'blue');
-            addLog('"O Sculk sussurrava em seus ossos."', 'blue');
-            addLog('"A morte era certa."', 'blue');
-            addLog('"Mas então..."', 'blue');
-            
-            addLog('', 'info');
-            
-            addLog('<span class="luxury-purple">A FADA:</span>', 'luxury-purple');
-            addLog('"**SERAPH** o encontrou."', 'luxury-purple');
-            addLog('"Viu nele algo raro."', 'luxury-purple');
-            addLog('"Uma vontade capaz de sobreviver."', 'luxury-purple');
-            addLog('"Capaz de existir onde a morte tem peso diferente."', 'luxury-purple');
-            
-            addLog('', 'info');
-            
-            addLog('<span class="gold">🌀 O PORTAL:</span>', 'gold');
-            addLog('"Ela abriu um portal."', 'gold');
-            addLog('"Para o universo de **SOULS**."', 'gold');
-            addLog('"Um lugar onde almas são moeda."', 'gold');
-            addLog('"Onde a fome pode ser saciada."', 'gold');
-            addLog('"Onde um exilado poderia REINAR."', 'gold');
-            
-            addXP(25);
-            unlockAchievement('Sobrevivente do Vazio');
-            
-            GameState.corruption += 15;
-            updateStats();
-            
-            // Efeito visual de portal
-            setTimeout(() => {
-                const eye = document.getElementById('void-eye');
-                if (eye) {
-                    eye.style.animation = 'none';
-                    eye.offsetHeight;
-                    eye.style.animation = 'eyePulse 2s infinite';
-                }
-            }, 500);
-        }
-    },
-
-    abel_gula: {
-        description: 'A ascensão do Novo Gula',
-        execute: () => {
-            addLog('<span class="gold">=== O NOVO GULA ===</span>', 'info');
-            
-            addLog('<span class="warning">O ANTIGO DETENTOR:</span>', 'warning');
-            addLog('"No universo de Souls..."', 'warning');
-            addLog('"Havia o antigo pecado da Gula."', 'warning');
-            addLog('"Uma besta."', 'warning');
-            addLog('"Comia por INSTINTO."', 'warning');
-            addLog('"Sem propósito. Sem realeza."', 'warning');
-            
-            addLog('', 'info');
-            
-            addLog('<span class="blood-red">O JULGAMENTO:</span>', 'error');
-            addLog('"Abel o julgou."', 'error');
-            addLog('"Indigno do título."', 'error');
-            addLog('"Uma criatura que apenas DEVORAVA."', 'error');
-            addLog('"Sem entender o **peso** do ato."', 'error');
-            
-            addLog('', 'info');
-            
-            addLog('<span class="experiment-purple">O PARICÍDIO DO PECADO:</span>', 'purple');
-            addLog('"Abel o MATOU."', 'purple');
-            addLog('"Assumiu o cargo."', 'purple');
-            addLog('"TRANSFORMOU o pecado."', 'purple');
-            addLog('"De **"fome de carne"** "', 'purple');
-            addLog('"Para **"fome de STATUS E CONTROLE"**."', 'purple');
-            
-            addLog('', 'info');
-            
-            addLog('<span class="gold">👑 A GULA RENASCIDA:</span>', 'gold');
-            addLog('"Não mais uma besta faminta."', 'gold');
-            addLog('"Agora um REI que CONSOME."', 'gold');
-            addLog('"Não comida. Importância."', 'gold');
-            addLog('"Não sobrevivência. DOMINAÇÃO."', 'gold');
-            
-            addXP(30);
-            unlockAchievement('Nova Gula');
-            
-            GameState.corruption += 25;
-            GameState.sanity -= 5;
-            updateStats();
-        }
-    },
-
-    abel_pacto: {
-        description: 'O pacto com Violet',
-        execute: () => {
-            addLog('<span class="gold">=== O PACTO DOS PECADOS ===</span>', 'info');
-            
-            addLog('<span class="luxury-purple">A ATENÇÃO DE VIOLET:</span>', 'luxury-purple');
-            addLog('"A ascensão de Abel atraiu olhares."', 'luxury-purple');
-            addLog('"O principal deles:"', 'luxury-purple');
-            addLog('"**VIOLET.**"', 'luxury-purple');
-            addLog('"O pecado que ele respeita."', 'luxury-purple');
-            
-            addLog('', 'info');
-            
-            addLog('<span class="warning">O RECONHECIMENTO:</span>', 'warning');
-            addLog('"Violet viu nele o que outros não viam."', 'warning');
-            addLog('"Um REI."', 'warning');
-            addLog('"Não um seguidor."', 'warning');
-            addLog('"Um igual."', 'warning');
-            addLog('"Um prato que merece ser apreciado."', 'warning');
-            
-            addLog('', 'info');
-            
-            addLog('<span class="blue">A OFERTA:</span>', 'blue');
-            addLog('"Ela lhe prometeu os MEIOS."', 'blue');
-            addLog('"Os meios para reconquistar seu TRONO ORIGINAL."', 'blue');
-            addLog('"O universo que o expulsou."', 'blue');
-            addLog('"A linhagem que o abandonou."', 'blue');
-            
-            addLog('', 'info');
-            
-            addLog('<span class="gold">🤝 A ALIANÇA:</span>', 'gold');
-            addLog('"Abel aceitou ser recrutado."', 'gold');
-            addLog('"Não por submissão."', 'gold');
-            addLog('"Por VISÃO."', 'gold');
-            addLog('"Viu nos Pecados o banquete ideal."', 'gold');
-            addLog('"O palco para sua ascensão FINAL."', 'gold');
-            
-            addXP(25);
-            
-            GameState.corruption += 15;
-            updateStats();
-        }
-    },
-
-    abel_filosofia: {
-        description: 'A filosofia do peso e da realeza',
-        execute: () => {
-            addLog('<span class="gold">=== O MESTRE DE CERIMÔNIAS ===</span>', 'info');
-            
-            addLog('<span class="luxury-purple">ARISTOCRACIA IMPECÁVEL:</span>', 'luxury-purple');
-            addLog('"Polido. Elegante."', 'luxury-purple');
-            addLog('"Postura de realeza mesmo no caos."', 'luxury-purple');
-            addLog('"Força-se a ser bom e educado."', 'luxury-purple');
-            addLog('"Pois grosseria é fraqueza."', 'luxury-purple');
-            addLog('"É **"leveza"**."', 'luxury-purple');
-            
-            addLog('', 'info');
-            
-            addLog('<span class="warning">A GULA EXISTENCIAL:</span>', 'warning');
-            addLog('"Não busca comida."', 'warning');
-            addLog('"Busca IMPORTÂNCIA."', 'warning');
-            addLog('"Busca CONTROLE."', 'warning');
-            addLog('"Quer ser o centro gravitacional."', 'warning');
-            addLog('"Do destino das PESSOAS."', 'warning');
-            
-            addLog('', 'info');
-            
-            addLog('<span class="experiment-purple">O PESO DA ALMA:</span>', 'purple');
-            addLog('"O mundo se divide em:"', 'purple');
-            addLog('"Quem tem **"PESO"**."', 'purple');
-            addLog('"Substância. Poder. Vontade."', 'purple');
-            addLog('"E quem é **"LEVE"**."', 'purple');
-            addLog('"Irrelevante. Descartável."', 'purple');
-            
-            addLog('', 'info');
-            
-            addLog('<span class="blue">O CÓDIGO DOS REIS:</span>', 'blue');
-            addLog('"Respeito ABSOLUTO por autoridade verdadeira."', 'blue');
-            addLog('"Reis. Violet."', 'blue');
-            addLog('"Um rei que governa com CONVICÇÃO..."', 'blue');
-            addLog('"É o único prato que merece ser apreciado como IGUAL."', 'blue');
-            
-            addLog('', 'info');
-            
-            addLog('<span class="gold">🕊️ PROTEÇÃO À INOCÊNCIA:</span>', 'gold');
-            addLog('"Nunca ferir CRIANÇAS."', 'gold');
-            addLog('"Regra inquebrável."', 'gold');
-            addLog('"Ele as vê como:"', 'gold');
-            addLog('"**"Pratos não contaminados"**."', 'gold');
-            addLog('"Potencial PURO."', 'gold');
-            addLog('"O que ele PERDEU quando sua linhagem foi humilhada."', 'gold');
-            
-            addLog('', 'info');
-            
-            addLog('<span class="experiment-purple">O MANIPULADOR:</span>', 'purple');
-            addLog('"Utiliza fios METAFÍSICOS."', 'purple');
-            addLog('"Controla ações à DISTÂNCIA."', 'purple');
-            addLog('"Mestre de MARIONETES."', 'purple');
-            addLog('"Em um banquete onde ele decide:"', 'purple');
-            addLog('"Quem VIVE."', 'purple');
-            addLog('"Quem é DEVORADO."', 'purple');
-            
-            addLog('', 'info');
-            
-            addLog('<span class="gold">💬 FRASE TÍPICA:</span>', 'gold');
-            addLog('<span class="luxury-purple">"A bondade do meu pai nos tornou invisíveis."</span>', 'luxury-purple');
-            addLog('<span class="luxury-purple">"Eu prefiro ser um monstro que o mundo é obrigado a olhar,"</span>', 'luxury-purple');
-            addLog('<span class="luxury-purple">"do que um santo que o mundo se permite ignorar."</span>', 'luxury-purple');
-            
-            addXP(35);
-            unlockAchievement('Mestre de Cerimônias');
-            unlockAchievement('Peso da Alma');
-            
-            GameState.sanity -= 8;
-            GameState.corruption += 10;
-            updateStats();
-        }
     }
 };
 
@@ -2379,632 +2971,629 @@ function changeGameMode(mode) {
         }
     });
     
-    switch(mode) {
-        case 'story':
-            addLog('[MODO] Modo História ativado.', 'highlight');
-            startStoryMode();
-            break;
-        case 'investigation':
-            addLog('[MODO] Modo Investigação ativado.', 'highlight');
-            startInvestigationMode();
-            break;
-        case 'survival':
-            addLog('[MODO] Modo Sobrevivência ativado.', 'warning');
-            startSurvivalMode();
-            break;
-    }
-    
-    updateUI();
+ switch(mode) {
+    case 'story':
+        addLog('[MODO] Modo História ativado.', 'highlight');
+        startStoryMode();
+        break;
+    case 'investigation':
+        addLog('[MODO] Modo Investigação ativado.', 'highlight');
+        startInvestigationMode();
+        break;
+    case 'survival':
+        addLog('[MODO] Modo Sobrevivência ativado.', 'warning');
+        startSurvivalMode();
+        break;
+}
+
+updateUI();
 }
 
 function startStoryMode() {
-    if (GameState.progress === 0) {
-        setTimeout(() => {
-            addLog('[NARRATIVA] Sistema DIÁRIO DE BORDO v3.0 inicializado', 'blue');
-            addLog('[NARRATIVA] Acessando registros do Pesquisador...', 'blue');
-            addLog('[NARRATIVA] Use os comandos para explorar os experimentos.', 'info');
-            addLog('[SISTEMA] Conectando ao Arquivo do Olho da Ganância...', 'gold');
-            addLog('[SISTEMA] Use "list" para ver experimentos disponíveis', 'gold');
-            addLog('[SISTEMA] ⚠️  AVISO: Estes registros contêm experimentos extremos', 'warning');
-            addLog('[SISTEMA] ⚠️  Realizados sob influência do Olho da Ganância', 'warning');
-        }, 1000);
-    }
+if (GameState.progress === 0) {
+    setTimeout(() => {
+        addLog('[NARRATIVA] Sistema DIÁRIO DE BORDO v3.0 inicializado', 'blue');
+        addLog('[NARRATIVA] Acessando registros do Pesquisador...', 'blue');
+        addLog('[NARRATIVA] Use os comandos para explorar os experimentos.', 'info');
+        addLog('[SISTEMA] Conectando ao Arquivo do Olho da Ganância...', 'gold');
+        addLog('[SISTEMA] Use "list" para ver experimentos disponíveis', 'gold');
+        addLog('[SISTEMA] ⚠️  AVISO: Estes registros contêm experimentos extremos', 'warning');
+        addLog('[SISTEMA] ⚠️  Realizados sob influência do Olho da Ganância', 'warning');
+    }, 1000);
+}
 }
 
 function startInvestigationMode() {
-    setTimeout(() => {
-        addLog('[INVESTIGAÇÃO] Mistério #1: O que aconteceu com a Cobaia 7?', 'purple');
-        addLog('[INVESTIGAÇÃO] Mistério #2: Origem do Sculk', 'purple');
-        addLog('[INVESTIGAÇÃO] Use comandos: examine, analyze, connect', 'purple');
-    }, 1000);
+setTimeout(() => {
+    addLog('[INVESTIGAÇÃO] Mistério #1: O que aconteceu com a Cobaia 7?', 'purple');
+    addLog('[INVESTIGAÇÃO] Mistério #2: Origem do Sculk', 'purple');
+    addLog('[INVESTIGAÇÃO] Use comandos: examine, analyze, connect', 'purple');
+}, 1000);
 }
 
 function startSurvivalMode() {
-    const overlays = document.querySelectorAll('.corruption-overlay');
-    overlays.forEach(overlay => {
-        overlay.style.opacity = '0.3';
-    });
-    
-    if (!GameState.corruptionInterval) {
-        GameState.corruptionInterval = setInterval(() => {
-            attemptCorruption();
-            
-            if (typeof VisualEffects !== 'undefined') {
-                if (Math.random() > 0.7) {
-                    VisualEffects.playRandomWhisper();
-                }
-                if (Math.random() > 0.8) {
-                    VisualEffects.createBloodDrip();
-                }
+const overlays = document.querySelectorAll('.corruption-overlay');
+overlays.forEach(overlay => {
+    overlay.style.opacity = '0.3';
+});
+
+if (!GameState.corruptionInterval) {
+    GameState.corruptionInterval = setInterval(() => {
+        attemptCorruption();
+        
+        if (typeof VisualEffects !== 'undefined') {
+            if (Math.random() > 0.7) {
+                VisualEffects.playRandomWhisper();
             }
-        }, 30000);
-    }
+            if (Math.random() > 0.8) {
+                VisualEffects.createBloodDrip();
+            }
+        }
+    }, 30000);
+}
 }
 
 function attemptCorruption() {
-    if (GameState.mode !== 'survival') return;
-    
-    const corruptionAttempts = [
-        () => {
-            addLog('[ABISMO] JUNTE-SE A NÓS... O CONHECIMENTO É ILIMITADO...', 'purple');
-            GameState.corruption += 5;
-            updateStats();
-        },
-        () => {
-            addLog('[VOZES] Por que se limitar à moralidade humana?', 'purple');
-            showPuzzle('corruption');
-        },
-        () => {
-            document.body.classList.add('shake');
-            setTimeout(() => document.body.classList.remove('shake'), 500);
-            addLog('[CORRUPÇÃO] O sistema treme... algo está tentando entrar.', 'warning');
-        }
-    ];
-    
-    const attempt = corruptionAttempts[Math.floor(Math.random() * corruptionAttempts.length)];
-    attempt();
+if (GameState.mode !== 'survival') return;
+
+const corruptionAttempts = [
+    () => {
+        addLog('[ABISMO] JUNTE-SE A NÓS... O CONHECIMENTO É ILIMITADO...', 'purple');
+        GameState.corruption += 5;
+        updateStats();
+    },
+    () => {
+        addLog('[VOZES] Por que se limitar à moralidade humana?', 'purple');
+        showPuzzle('corruption');
+    },
+    () => {
+        document.body.classList.add('shake');
+        setTimeout(() => document.body.classList.remove('shake'), 500);
+        addLog('[CORRUPÇÃO] O sistema treme... algo está tentando entrar.', 'warning');
+    }
+];
+
+const attempt = corruptionAttempts[Math.floor(Math.random() * corruptionAttempts.length)];
+attempt();
 }
 
 // ==================== EFEITOS VISUAIS ====================
 const VisualEffects = {
-    isGlitchActive: false,
-    isBloodActive: false,
-    eyesCount: 0,
-    maxEyes: 15,
+isGlitchActive: false,
+isBloodActive: false,
+eyesCount: 0,
+maxEyes: 15,
+
+init() {
+    this.createEyes();
+    this.setupAudio();
+    this.startAmbientSounds();
+    this.applyBreathingEffect();
     
-    init() {
-        this.createEyes();
-        this.setupAudio();
-        this.startAmbientSounds();
-        this.applyBreathingEffect();
-        
-        setInterval(() => this.updateEffects(), 1000);
-    },
+    setInterval(() => this.updateEffects(), 1000);
+},
+
+createEyes() {
+    const container = document.getElementById('eye-background');
+    if (!container) return;
     
-    createEyes() {
-        const container = document.getElementById('eye-background');
-        if (!container) return;
-        
-        for (let i = 0; i < this.maxEyes; i++) {
-            setTimeout(() => {
-                const eye = document.createElement('div');
-                eye.className = 'eye';
-                
-                eye.style.left = `${Math.random() * 100}%`;
-                eye.style.top = `${Math.random() * 100}%`;
-                
-                const size = 20 + Math.random() * 40;
-                eye.style.width = `${size}px`;
-                eye.style.height = `${size}px`;
-                
-                eye.style.opacity = 0.1 + Math.random() * 0.3;
-                
-                container.appendChild(eye);
-                this.eyesCount++;
-            }, i * 500);
-        }
-    },
-    
-    setupAudio() {
-        this.typingSounds = [
-            'https://assets.mixkit.co/sfx/preview/mixkit-fast-typing-on-typewriter-1116.mp3',
-            'https://assets.mixkit.co/sfx/preview/mixkit-hard-typewriter-click-1119.mp3',
-            'https://assets.mixkit.co/sfx/preview/mixkit-typewriter-click-1115.mp3'
-        ];        
-        this.heartbeatSound = 'https://assets.mixkit.co/sfx/preview/mixkit-single-heartbeat-493.mp3';
-        this.ambientSound = 'https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-ambience-353.mp3';
-        this.glitchSound = 'https://assets.mixkit.co/sfx/preview/mixkit-computer-glitch-2338.mp3';
-        this.bloodSound = 'https://assets.mixkit.co/sfx/preview/mixkit-water-drip-3000.mp3';
-        
-        this.whisperSounds = [
-            'https://assets.mixkit.co/sfx/preview/mixkit-male-voice-whisper-1136.mp3',
-            'https://assets.mixkit.co/sfx/preview/mixkit-female-voice-whisper-1137.mp3'
-        ];
-    },
-    
-    startAmbientSounds() {
-        const ambient = document.getElementById('ambient-sound');
-        if (ambient) {
-            try {
-                ambient.src = this.ambientSound;
-                ambient.volume = 0.1;
-                ambient.play().catch(e => console.log('Audio autoplay blocked:', e));
-            } catch (e) {
-                console.log('Usando fallback de áudio');
-            }
-        }
-    },
-    
-    updateEffects() {
-        this.updateSanityEffects();
-        this.updateCorruptionEffects();
-        this.updateSurvivalEffects();
-    },
-    
-    updateSanityEffects() {
-        const sanity = GameState.sanity;
-        const eyeBg = document.getElementById('eye-background');
-        const glitchOverlay = document.getElementById('glitch-overlay');
-        
-        if (sanity < 50) {
-            const opacity = (50 - sanity) / 100;
-            if (eyeBg) eyeBg.style.opacity = Math.min(opacity, 0.5);
-            
-            if (sanity < 30 && glitchOverlay) {
-                glitchOverlay.style.opacity = (30 - sanity) / 50;
-            }
-            
-            if (sanity < 20 && !document.body.classList.contains('low-sanity-shake')) {
-                document.body.classList.add('low-sanity-shake');
-            }
-            
-            if (sanity < 40 && Math.random() > 0.7) {
-                this.applyRandomGlitch();
-            }
-        } else {
-            if (eyeBg) eyeBg.style.opacity = 0;
-            if (glitchOverlay) glitchOverlay.style.opacity = 0;
-            document.body.classList.remove('low-sanity-shake');
-        }
-    },
-    
-    updateCorruptionEffects() {
-        const corruption = GameState.corruption;
-        
-        this.updateHeartbeat(corruption);
-        
-        if (corruption > 30 && Math.random() > 0.95) {
-            this.playRandomWhisper();
-        }
-        
-        if (corruption > 50) {
-            const elements = document.querySelectorAll('.tab, .mode-btn, .stat-item');
-            elements.forEach(el => {
-                if (!el.classList.contains('corruption-pulse') && Math.random() > 0.8) {
-                    el.classList.add('corruption-pulse');
-                    setTimeout(() => el.classList.remove('corruption-pulse'), 3000);
-                }
-            });
-        }
-    },
-    
-    updateSurvivalEffects() {
-        if (GameState.mode === 'survival') {
-            if (!this.isBloodActive && Math.random() > 0.95) {
-                this.createBloodDrip();
-            }
-            
-            const survivalTime = GameState.commandHistory.length;
-            if (survivalTime > 50 && Math.random() > 0.98) {
-                this.playGlitchSound();
-            }
-        }
-    },
-    
-    applyRandomGlitch() {
-        const logLines = document.querySelectorAll('.log-line');
-        if (logLines.length > 0) {
-            const randomLine = logLines[Math.floor(Math.random() * logLines.length)];
-            randomLine.classList.add('glitch-effect');
-            
-            this.playGlitchSound();
-            
-            setTimeout(() => {
-                randomLine.classList.remove('glitch-effect');
-            }, 500);
-        }
-    },
-    
-    createBloodDrip() {
-        this.isBloodActive = true;
-        const container = document.getElementById('blood-container');
-        
-        for (let i = 0; i < 3; i++) {
-            const drip = document.createElement('div');
-            drip.className = 'blood-drip';
-            
-            const side = Math.floor(Math.random() * 4);
-            switch(side) {
-                case 0:
-                    drip.style.left = `${Math.random() * 100}%`;
-                    drip.style.top = '0';
-                    break;
-                case 1:
-                    drip.style.right = '0';
-                    drip.style.top = `${Math.random() * 100}%`;
-                    drip.style.transform = 'rotate(90deg)';
-                    break;
-                case 2:
-                    drip.style.left = `${Math.random() * 100}%`;
-                    drip.style.bottom = '0';
-                    drip.style.transform = 'rotate(180deg)';
-                    break;
-                case 3:
-                    drip.style.left = '0';
-                    drip.style.top = `${Math.random() * 100}%`;
-                    drip.style.transform = 'rotate(270deg)';
-                    break;
-            }
-            
-            const red = 139 + Math.floor(Math.random() * 100);
-            drip.style.background = `linear-gradient(to bottom, 
-                transparent 0%, 
-                rgba(${red}, 0, 0, 0.8) 10%, 
-                rgba(139, 0, 0, 0.6) 30%, 
-                transparent 100%)`;
-            
-            container.appendChild(drip);
-            
-            this.playBloodDripSound();
-            
-            setTimeout(() => {
-                if (drip.parentNode === container) {
-                    container.removeChild(drip);
-                }
-            }, 15000);
-        }
-        
+    for (let i = 0; i < this.maxEyes; i++) {
         setTimeout(() => {
-            this.isBloodActive = false;
-        }, 5000);
-    },
-    
-    updateHeartbeat(corruption) {
-        const heartbeat = document.getElementById('heartbeat-sound');
-        if (!heartbeat) return;
-        
-        if (corruption > 20) {
-            if (heartbeat.paused) {
-                try {
-                    heartbeat.src = this.heartbeatSound;
-                    heartbeat.volume = 0.1 + (corruption / 100) * 0.3;
-                    heartbeat.play().catch(e => console.log('Heartbeat audio error:', e));
-                } catch (e) {
-                    console.log('Heartbeat fallback');
-                }
-            }
+            const eye = document.createElement('div');
+            eye.className = 'eye';
             
-            heartbeat.volume = 0.1 + (corruption / 100) * 0.4;
+            eye.style.left = `${Math.random() * 100}%`;
+            eye.style.top = `${Math.random() * 100}%`;
             
-        } else {
-            heartbeat.pause();
-            heartbeat.currentTime = 0;
-        }
-    },
+            const size = 20 + Math.random() * 40;
+            eye.style.width = `${size}px`;
+            eye.style.height = `${size}px`;
+            
+            eye.style.opacity = 0.1 + Math.random() * 0.3;
+            
+            container.appendChild(eye);
+            this.eyesCount++;
+        }, i * 500);
+    }
+},
+
+setupAudio() {
+    this.typingSounds = [
+        'https://assets.mixkit.co/sfx/preview/mixkit-fast-typing-on-typewriter-1116.mp3',
+        'https://assets.mixkit.co/sfx/preview/mixkit-hard-typewriter-click-1119.mp3',
+        'https://assets.mixkit.co/sfx/preview/mixkit-typewriter-click-1115.mp3'
+    ];        
+    this.heartbeatSound = 'https://assets.mixkit.co/sfx/preview/mixkit-single-heartbeat-493.mp3';
+    this.ambientSound = 'https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-ambience-353.mp3';
+    this.glitchSound = 'https://assets.mixkit.co/sfx/preview/mixkit-computer-glitch-2338.mp3';
+    this.bloodSound = 'https://assets.mixkit.co/sfx/preview/mixkit-water-drip-3000.mp3';
     
-    playTypingSound() {
-        if (Math.random() > 0.3) return;
-        
-        const typing = document.getElementById('typing-sound');
-        if (typing) {
-            const randomSound = this.typingSounds[Math.floor(Math.random() * this.typingSounds.length)];
-            try {
-                typing.src = randomSound;
-                typing.volume = 0.2;
-                typing.currentTime = 0;
-                typing.play().catch(e => console.log('Typing sound error'));
-            } catch (e) {
-            }
-        }
-    },
-    
-    playRandomWhisper() {
-        const whisper = document.getElementById('whisper-sound');
-        if (whisper) {
-            const randomSound = this.whisperSounds[Math.floor(Math.random() * this.whisperSounds.length)];
-            try {
-                whisper.src = randomSound;
-                whisper.volume = 0.05 + (GameState.corruption / 100) * 0.1;
-                whisper.currentTime = 0;
-                whisper.play().catch(e => console.log('Whisper sound error'));
-                
-                this.showWhisperEffect();
-            } catch (e) {
-            }
-        }
-    },
-    
-    showWhisperEffect() {
-        const whisperText = document.createElement('div');
-        whisperText.style.position = 'fixed';
-        whisperText.style.left = `${10 + Math.random() * 80}%`;
-        whisperText.style.top = `${10 + Math.random() * 80}%`;
-        whisperText.style.color = 'rgba(160, 66, 255, 0.7)';
-        whisperText.style.fontSize = '14px';
-        whisperText.style.fontFamily = 'Consolas, monospace';
-        whisperText.style.pointerEvents = 'none';
-        whisperText.style.zIndex = '10000';
-        whisperText.style.textShadow = '0 0 10px rgba(160, 66, 255, 0.5)';
-        whisperText.style.opacity = '0';
-        
-        const whispers = [
-            'Junte-se a nós...',
-            'O conhecimento é dor...',
-            'Você está sozinho...',
-            'O Olho observa...',
-            'Corrompa-se...',
-            'A verdade machuca...',
-            'Abra seus olhos...',
-            'Não resista...',
-            'Seja um com o Abismo...',
-            'A ganância é virtude...'
-        ];
-        
-        whisperText.textContent = whispers[Math.floor(Math.random() * whispers.length)];
-        document.body.appendChild(whisperText);
-        
-        whisperText.animate([
-            { opacity: 0, transform: 'translateY(10px)' },
-            { opacity: 0.8, transform: 'translateY(0)' },
-            { opacity: 0, transform: 'translateY(-10px)' }
-        ], {
-            duration: 3000,
-            easing: 'ease-in-out'
-        });
-        
-        setTimeout(() => {
-            if (whisperText.parentNode) {
-                whisperText.parentNode.removeChild(whisperText);
-            }
-        }, 3000);
-    },
-    
-    playGlitchSound() {
-        const glitch = document.getElementById('glitch-sound');
-        if (glitch && Math.random() > 0.5) {
-            try {
-                glitch.src = this.glitchSound;
-                glitch.volume = 0.3;
-                glitch.currentTime = 0;
-                glitch.play().catch(e => console.log('Glitch sound error'));
-            } catch (e) {
-            }
-        }
-    },
-    
-    playBloodDripSound() {
-        const blood = document.getElementById('blood-drip-sound');
-        if (blood) {
-            try {
-                blood.src = this.bloodSound;
-                blood.volume = 0.2;
-                blood.currentTime = 0;
-                blood.play().catch(e => console.log('Blood drip sound error'));
-            } catch (e) {
-            }
-        }
-    },
-    
-    applyBreathingEffect() {
-        const prompt = document.querySelector('.prompt');
-        if (prompt && !prompt.classList.contains('breathing-text')) {
-            prompt.classList.add('breathing-text');
-        }
-        
-        const logs = document.querySelectorAll('.log-line');
-        if (logs.length > 0 && Math.random() > 0.8) {
-            const randomLog = logs[Math.floor(Math.random() * logs.length)];
-            randomLog.classList.add('breathing-text');
-            setTimeout(() => randomLog.classList.remove('breathing-text'), 8000);
+    this.whisperSounds = [
+        'https://assets.mixkit.co/sfx/preview/mixkit-male-voice-whisper-1136.mp3',
+        'https://assets.mixkit.co/sfx/preview/mixkit-female-voice-whisper-1137.mp3'
+    ];
+},
+
+startAmbientSounds() {
+    const ambient = document.getElementById('ambient-sound');
+    if (ambient) {
+        try {
+            ambient.src = this.ambientSound;
+            ambient.volume = 0.1;
+            ambient.play().catch(e => console.log('Audio autoplay blocked:', e));
+        } catch (e) {
+            console.log('Usando fallback de áudio');
         }
     }
+},
+
+updateEffects() {
+    this.updateSanityEffects();
+    this.updateCorruptionEffects();
+    this.updateSurvivalEffects();
+},
+
+updateSanityEffects() {
+    const sanity = GameState.sanity;
+    const eyeBg = document.getElementById('eye-background');
+    const glitchOverlay = document.getElementById('glitch-overlay');
+    
+    if (sanity < 50) {
+        const opacity = (50 - sanity) / 100;
+        if (eyeBg) eyeBg.style.opacity = Math.min(opacity, 0.5);
+        
+        if (sanity < 30 && glitchOverlay) {
+            glitchOverlay.style.opacity = (30 - sanity) / 50;
+        }
+        
+        if (sanity < 20 && !document.body.classList.contains('low-sanity-shake')) {
+            document.body.classList.add('low-sanity-shake');
+        }
+        
+        if (sanity < 40 && Math.random() > 0.7) {
+            this.applyRandomGlitch();
+        }
+    } else {
+        if (eyeBg) eyeBg.style.opacity = 0;
+        if (glitchOverlay) glitchOverlay.style.opacity = 0;
+        document.body.classList.remove('low-sanity-shake');
+    }
+},
+
+updateCorruptionEffects() {
+    const corruption = GameState.corruption;
+    
+    this.updateHeartbeat(corruption);
+    
+    if (corruption > 30 && Math.random() > 0.95) {
+        this.playRandomWhisper();
+    }
+    
+    if (corruption > 50) {
+        const elements = document.querySelectorAll('.tab, .mode-btn, .stat-item');
+        elements.forEach(el => {
+            if (!el.classList.contains('corruption-pulse') && Math.random() > 0.8) {
+                el.classList.add('corruption-pulse');
+                setTimeout(() => el.classList.remove('corruption-pulse'), 3000);
+            }
+        });
+    }
+},
+
+updateSurvivalEffects() {
+    if (GameState.mode === 'survival') {
+        if (!this.isBloodActive && Math.random() > 0.95) {
+            this.createBloodDrip();
+        }
+        
+        const survivalTime = GameState.commandHistory.length;
+        if (survivalTime > 50 && Math.random() > 0.98) {
+            this.playGlitchSound();
+        }
+    }
+},
+
+applyRandomGlitch() {
+    const logLines = document.querySelectorAll('.log-line');
+    if (logLines.length > 0) {
+        const randomLine = logLines[Math.floor(Math.random() * logLines.length)];
+        randomLine.classList.add('glitch-effect');
+        
+        this.playGlitchSound();
+        
+        setTimeout(() => {
+            randomLine.classList.remove('glitch-effect');
+        }, 500);
+    }
+},
+
+createBloodDrip() {
+    this.isBloodActive = true;
+    const container = document.getElementById('blood-container');
+    
+    for (let i = 0; i < 3; i++) {
+        const drip = document.createElement('div');
+        drip.className = 'blood-drip';
+        
+        const side = Math.floor(Math.random() * 4);
+        switch(side) {
+            case 0:
+                drip.style.left = `${Math.random() * 100}%`;
+                drip.style.top = '0';
+                break;
+            case 1:
+                drip.style.right = '0';
+                drip.style.top = `${Math.random() * 100}%`;
+                drip.style.transform = 'rotate(90deg)';
+                break;
+            case 2:
+                drip.style.left = `${Math.random() * 100}%`;
+                drip.style.bottom = '0';
+                drip.style.transform = 'rotate(180deg)';
+                break;
+            case 3:
+                drip.style.left = '0';
+                drip.style.top = `${Math.random() * 100}%`;
+                drip.style.transform = 'rotate(270deg)';
+                break;
+        }
+        
+        const red = 139 + Math.floor(Math.random() * 100);
+        drip.style.background = `linear-gradient(to bottom, 
+            transparent 0%, 
+            rgba(${red}, 0, 0, 0.8) 10%, 
+            rgba(139, 0, 0, 0.6) 30%, 
+            transparent 100%)`;
+        
+        container.appendChild(drip);
+        
+        this.playBloodDripSound();
+        
+        setTimeout(() => {
+            if (drip.parentNode === container) {
+                container.removeChild(drip);
+            }
+        }, 15000);
+    }
+    
+    setTimeout(() => {
+        this.isBloodActive = false;
+    }, 5000);
+},
+
+updateHeartbeat(corruption) {
+    const heartbeat = document.getElementById('heartbeat-sound');
+    if (!heartbeat) return;
+    
+    if (corruption > 20) {
+        if (heartbeat.paused) {
+            try {
+                heartbeat.src = this.heartbeatSound;
+                heartbeat.volume = 0.1 + (corruption / 100) * 0.3;
+                heartbeat.play().catch(e => console.log('Heartbeat audio error:', e));
+            } catch (e) {
+                console.log('Heartbeat fallback');
+            }
+        }
+        
+        heartbeat.volume = 0.1 + (corruption / 100) * 0.4;
+        
+    } else {
+        heartbeat.pause();
+        heartbeat.currentTime = 0;
+    }
+},
+
+playTypingSound() {
+    if (Math.random() > 0.3) return;
+    
+    const typing = document.getElementById('typing-sound');
+    if (typing) {
+        const randomSound = this.typingSounds[Math.floor(Math.random() * this.typingSounds.length)];
+        try {
+            typing.src = randomSound;
+            typing.volume = 0.2;
+            typing.currentTime = 0;
+            typing.play().catch(e => console.log('Typing sound error'));
+        } catch (e) {
+        }
+    }
+},
+
+playRandomWhisper() {
+    const whisper = document.getElementById('whisper-sound');
+    if (whisper) {
+        const randomSound = this.whisperSounds[Math.floor(Math.random() * this.whisperSounds.length)];
+        try {
+            whisper.src = randomSound;
+            whisper.volume = 0.05 + (GameState.corruption / 100) * 0.1;
+            whisper.currentTime = 0;
+            whisper.play().catch(e => console.log('Whisper sound error'));
+            
+            this.showWhisperEffect();
+        } catch (e) {
+        }
+    }
+},
+
+showWhisperEffect() {
+    const whisperText = document.createElement('div');
+    whisperText.style.position = 'fixed';
+    whisperText.style.left = `${10 + Math.random() * 80}%`;
+    whisperText.style.top = `${10 + Math.random() * 80}%`;
+    whisperText.style.color = 'rgba(160, 66, 255, 0.7)';
+    whisperText.style.fontSize = '14px';
+    whisperText.style.fontFamily = 'Consolas, monospace';
+    whisperText.style.pointerEvents = 'none';
+    whisperText.style.zIndex = '10000';
+    whisperText.style.textShadow = '0 0 10px rgba(160, 66, 255, 0.5)';
+    whisperText.style.opacity = '0';
+    
+    const whispers = [
+        'Junte-se a nós...',
+        'O conhecimento é dor...',
+        'Você está sozinho...',
+        'O Olho observa...',
+        'Corrompa-se...',
+        'A verdade machuca...',
+        'Abra seus olhos...',
+        'Não resista...',
+        'Seja um com o Abismo...',
+        'A ganância é virtude...'
+    ];
+    
+    whisperText.textContent = whispers[Math.floor(Math.random() * whispers.length)];
+    document.body.appendChild(whisperText);
+    
+    whisperText.animate([
+        { opacity: 0, transform: 'translateY(10px)' },
+        { opacity: 0.8, transform: 'translateY(0)' },
+        { opacity: 0, transform: 'translateY(-10px)' }
+    ], {
+        duration: 3000,
+        easing: 'ease-in-out'
+    });
+    
+    setTimeout(() => {
+        if (whisperText.parentNode) {
+            whisperText.parentNode.removeChild(whisperText);
+        }
+    }, 3000);
+},
+
+playGlitchSound() {
+    const glitch = document.getElementById('glitch-sound');
+    if (glitch && Math.random() > 0.5) {
+        try {
+            glitch.src = this.glitchSound;
+            glitch.volume = 0.3;
+            glitch.currentTime = 0;
+            glitch.play().catch(e => console.log('Glitch sound error'));
+        } catch (e) {
+        }
+    }
+},
+
+playBloodDripSound() {
+    const blood = document.getElementById('blood-drip-sound');
+    if (blood) {
+        try {
+            blood.src = this.bloodSound;
+            blood.volume = 0.2;
+            blood.currentTime = 0;
+            blood.play().catch(e => console.log('Blood drip sound error'));
+        } catch (e) {
+        }
+    }
+},
+
+applyBreathingEffect() {
+    const prompt = document.querySelector('.prompt');
+    if (prompt && !prompt.classList.contains('breathing-text')) {
+        prompt.classList.add('breathing-text');
+    }
+    
+    const logs = document.querySelectorAll('.log-line');
+    if (logs.length > 0 && Math.random() > 0.8) {
+        const randomLog = logs[Math.floor(Math.random() * logs.length)];
+        randomLog.classList.add('breathing-text');
+        setTimeout(() => randomLog.classList.remove('breathing-text'), 8000);
+    }
+}
 };
 
 // ==================== INICIALIZAÇÃO ====================
 function init() {
-    console.log("Sistema iniciando...");
+console.log("Sistema iniciando...");
+
+loadSave();
+
+const input = document.getElementById('command-input');
+const prompt = document.getElementById('prompt');
+
+updateMediaGrid();
+updateMap();
+
+VisualEffects.init();
+
+setTimeout(() => {
+    addLog('DIÁRIO DE BORDO v3.0 - SISTEMA INICIALIZADO', 'highlight');
+    addLog('Digite "help" para ver os comandos disponíveis', 'info');
     
-    loadSave();
+    if (GameState.commandHistory.length === 0) {
+        unlockAchievement('Primeiro Acesso');
+    }
+}, 500);
+
+input.addEventListener('keydown', (e) => {
+    if (e.key.length === 1 || e.key === 'Backspace' || e.key === 'Enter') {
+        VisualEffects.playTypingSound();
+    }
     
-    const input = document.getElementById('command-input');
-    const prompt = document.getElementById('prompt');
-    
-    updateMediaGrid();
-    updateMap();
-    
-    VisualEffects.init();
-    
-    setTimeout(() => {
-        addLog('DIÁRIO DE BORDO v3.0 - SISTEMA INICIALIZADO', 'highlight');
-        addLog('Digite "help" para ver os comandos disponíveis', 'info');
-        
-        if (GameState.commandHistory.length === 0) {
-            unlockAchievement('Primeiro Acesso');
-        }
-    }, 500);
-    
-    input.addEventListener('keydown', (e) => {
-        if (e.key.length === 1 || e.key === 'Backspace' || e.key === 'Enter') {
-            VisualEffects.playTypingSound();
-        }
-        
-        if (e.key === 'Enter') {
-            const commandText = input.value.trim();
-            if (commandText) {
-                GameState.commandHistory.push(commandText);
+    if (e.key === 'Enter') {
+        const commandText = input.value.trim();
+        if (commandText) {
+            GameState.commandHistory.push(commandText);
+            
+            prompt.textContent = `pesquisador@${GameState.mode}:~$`;
+            addLog(`<span class="prompt">pesquisador@${GameState.mode}:~$</span> ${commandText}`, 'info');
+            
+            const parts = commandText.split(' ');
+            const cmd = parts[0].toLowerCase();
+            const args = parts.slice(1);
+            
+            if (commands[cmd]) {
+                commands[cmd].execute(args);
                 
-                prompt.textContent = `pesquisador@${GameState.mode}:~$`;
-                addLog(`<span class="prompt">pesquisador@${GameState.mode}:~$</span> ${commandText}`, 'info');
-                
-                const parts = commandText.split(' ');
-                const cmd = parts[0].toLowerCase();
-                const args = parts.slice(1);
-                
-                if (commands[cmd]) {
-                    commands[cmd].execute(args);
-                    
-                    // Verificar conquistas específicas após comandos
-                    if (cmd.startsWith('grimm_')) {
-                        checkGrimmAchievements();
-                    } else if (cmd.startsWith('abel_')) {
-                        checkAbelAchievements();
-                    } else if (cmd.startsWith('mira_')) {
-                        checkMiraAchievements();
-                    } else if (cmd.startsWith('violet') || cmd.startsWith('bazar') || cmd.startsWith('crescimento') || cmd.startsWith('escola') || cmd.startsWith('maturidade')) {
-                        checkVioletAchievements();
-                    } else if (cmd.startsWith('preguiça') || cmd.startsWith('hypnos') || cmd.startsWith('violet_hypnos') || cmd.startsWith('treinamento') || cmd.startsWith('abandono') || cmd.startsWith('desespero')) {
-                        checkHypnosAchievements();
-                    }
-                } else {
-                    addLog(`Comando não encontrado: ${cmd}`, 'error');
-                    addLog('Digite "help" para ajuda', 'info');
+                // Verificar conquistas específicas após comandos
+                if (cmd.startsWith('grimm_')) {
+                    checkGrimmAchievements();
+                } else if (cmd.startsWith('abel_')) {
+                    checkAbelAchievements();
+                } else if (cmd.startsWith('mira_')) {
+                    checkMiraAchievements();
                 }
-                
+            } else {
+                addLog(`Comando não encontrado: ${cmd}`, 'error');
+                addLog('Digite "help" para ajuda', 'info');
+            }
+            
+            input.value = '';
+            updateUI();
+        }
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (GameState.commandHistory.length > 0) {
+            if (GameState.historyIndex === undefined) {
+                GameState.historyIndex = GameState.commandHistory.length - 1;
+            } else {
+                GameState.historyIndex = Math.max(0, GameState.historyIndex - 1);
+            }
+            input.value = GameState.commandHistory[GameState.historyIndex];
+        }
+    } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (GameState.historyIndex !== undefined) {
+            if (GameState.historyIndex >= GameState.commandHistory.length - 1) {
+                GameState.historyIndex = undefined;
                 input.value = '';
-                updateUI();
-            }
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            if (GameState.commandHistory.length > 0) {
-                if (GameState.historyIndex === undefined) {
-                    GameState.historyIndex = GameState.commandHistory.length - 1;
-                } else {
-                    GameState.historyIndex = Math.max(0, GameState.historyIndex - 1);
-                }
+            } else {
+                GameState.historyIndex++;
                 input.value = GameState.commandHistory[GameState.historyIndex];
-            }
-        } else if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            if (GameState.historyIndex !== undefined) {
-                if (GameState.historyIndex >= GameState.commandHistory.length - 1) {
-                    GameState.historyIndex = undefined;
-                    input.value = '';
-                } else {
-                    GameState.historyIndex++;
-                    input.value = GameState.commandHistory[GameState.historyIndex];
-                }
-            }
-        }
-    });
-    
-    input.focus();
-    
-    const placeholders = [
-        'Digite "list" para ver experimentos...',
-        'Tente "access EXPERIMENTO047"...',
-        'Use "access EXPERIMENTO184" para infecções...',
-        'Acesse "EXPERIMENTO201" para projeto gestação...',
-        'Digite "help" para todos os comandos...',
-        'Digite "preguiça" para saber sobre Hypnos...',
-        'Use "abandono" para história triste de Hypnos...',
-        'Tente "desespero" para o final da história...',
-        'Digite "treinamento" para saber sobre a arma...',
-        'Use "grimm_fera" para conhecer a fera primordial...',
-        'Tente "multile_pantera_completo" para ascensão canibal...',
-        'Digite "pacto_cachorrinho" para o momento icônico...',
-        'Explore "encontro_violet" para o confronto com Violet...',
-        'Digite "mira_origem" para conhecer a história sombria...',
-        'Digite "abel_origem" para o banquete do exílio...',
-        'Use "abel_gula" para a ascensão do Novo Gula...',
-        'Tente "abel_filosofia" para compreender o peso da alma...',
-        'Explore "abel_pacto" para o pacto com Violet...',
-        'Conheça "abel_seraph" e a travessia da fada...'
-    ];
-    
-    let phIndex = 0;
-    let typing = true;
-    let phText = '';
-    
-    function typePlaceholder() {
-        if (typing) {
-            if (phText.length < placeholders[phIndex].length) {
-                phText += placeholders[phIndex][phText.length];
-                input.placeholder = phText;
-                setTimeout(typePlaceholder, 50);
-            } else {
-                typing = false;
-                setTimeout(typePlaceholder, 2000);
-            }
-        } else {
-            if (phText.length > 0) {
-                phText = phText.slice(0, -1);
-                input.placeholder = phText;
-                setTimeout(typePlaceholder, 30);
-            } else {
-                typing = true;
-                phIndex = (phIndex + 1) % placeholders.length;
-                setTimeout(typePlaceholder, 500);
             }
         }
     }
-    
-    typePlaceholder();
-    
-    setInterval(autoSave, 60000);
-    
-    setInterval(() => {
-        if (Math.random() > 0.6) {
-            blinkEye();
+});
+
+input.focus();
+
+const placeholders = [
+    'Digite "list" para ver experimentos...',
+    'Tente "access EXPERIMENTO047"...',
+    'Use "access EXPERIMENTO184" para infecções...',
+    'Acesse "EXPERIMENTO201" para projeto gestação...',
+    'Digite "help" para todos os comandos...',
+    'Digite "preguiça" para saber sobre Hypnos...',
+    'Use "abandono" para história triste de Hypnos...',
+    'Tente "desespero" para o final da história...',
+    'Digite "treinamento" para saber sobre a arma...',
+    'Use "grimm_fera" para conhecer a fera primordial...',
+    'Tente "multile_pantera_completo" para ascensão canibal...',
+    'Digite "pacto_cachorrinho" para o momento icônico...',
+    'Explore "encontro_violet" para o confronto com Violet...',
+    'Digite "mira_origem" para conhecer a história sombria...',
+    'Digite "abel_origem" para o banquete do exílio...',
+    'Use "abel_gula" para a ascensão do Novo Gula...',
+    'Tente "abel_filosofia" para compreender o peso da alma...',
+    'Explore "abel_pacto" para o pacto com Violet...',
+    'Conheça "abel_seraph" e a travessia da fada...'
+];
+
+let phIndex = 0;
+let typing = true;
+let phText = '';
+
+function typePlaceholder() {
+    if (typing) {
+        if (phText.length < placeholders[phIndex].length) {
+            phText += placeholders[phIndex][phText.length];
+            input.placeholder = phText;
+            setTimeout(typePlaceholder, 50);
+        } else {
+            typing = false;
+            setTimeout(typePlaceholder, 2000);
         }
-    }, 3000 + Math.random() * 4000);
+    } else {
+        if (phText.length > 0) {
+            phText = phText.slice(0, -1);
+            input.placeholder = phText;
+            setTimeout(typePlaceholder, 30);
+        } else {
+            typing = true;
+            phIndex = (phIndex + 1) % placeholders.length;
+            setTimeout(typePlaceholder, 500);
+        }
+    }
+}
+
+typePlaceholder();
+
+setInterval(autoSave, 60000);
+
+setInterval(() => {
+    if (Math.random() > 0.6) {
+        blinkEye();
+    }
+}, 3000 + Math.random() * 4000);
 }
 
 // Função para verificar conquistas de Abel
 function checkAbelAchievements() {
-    let abelCommandsUsed = 0;
-    const abelCommands = ['abel_origem', 'abel_seraph', 'abel_gula', 'abel_pacto', 'abel_filosofia'];
-    
-    GameState.commandHistory.forEach(cmd => {
-        const baseCmd = cmd.split(' ')[0].toLowerCase();
-        if (abelCommands.includes(baseCmd)) {
-            abelCommandsUsed++;
-        }
-    });
-    
-    if (abelCommandsUsed >= 1 && !GameState.achievements.has('Príncipe do Banquete')) {
-        unlockAchievement('Príncipe do Banquete');
+let abelCommandsUsed = 0;
+const abelCommands = ['abel_origem', 'abel_seraph', 'abel_gula', 'abel_pacto', 'abel_filosofia'];
+
+GameState.commandHistory.forEach(cmd => {
+    const baseCmd = cmd.split(' ')[0].toLowerCase();
+    if (abelCommands.includes(baseCmd)) {
+        abelCommandsUsed++;
     }
-    if (abelCommandsUsed >= 2 && !GameState.achievements.has('Patricida Nobre')) {
-        unlockAchievement('Patricida Nobre');
-    }
-    if (abelCommandsUsed >= 3 && !GameState.achievements.has('Sobrevivente do Vazio')) {
-        unlockAchievement('Sobrevivente do Vazio');
-    }
-    if (abelCommandsUsed >= 4 && !GameState.achievements.has('Nova Gula')) {
-        unlockAchievement('Nova Gula');
-    }
-    if (abelCommandsUsed >= 5 && !GameState.achievements.has('Mestre de Cerimônias')) {
-        unlockAchievement('Mestre de Cerimônias');
-        unlockAchievement('Peso da Alma');
-    }
+});
+
+if (abelCommandsUsed >= 1 && !GameState.achievements.has('Príncipe do Banquete')) {
+    unlockAchievement('Príncipe do Banquete');
+}
+if (abelCommandsUsed >= 2 && !GameState.achievements.has('Patricida Nobre')) {
+    unlockAchievement('Patricida Nobre');
+}
+if (abelCommandsUsed >= 3 && !GameState.achievements.has('Sobrevivente do Vazio')) {
+    unlockAchievement('Sobrevivente do Vazio');
+}
+if (abelCommandsUsed >= 4 && !GameState.achievements.has('Nova Gula')) {
+    unlockAchievement('Nova Gula');
+}
+if (abelCommandsUsed >= 5 && !GameState.achievements.has('Mestre de Cerimônias')) {
+    unlockAchievement('Mestre de Cerimônias');
+    unlockAchievement('Peso da Alma');
+}
 }
 
 // Função para verificar conquistas de Mira
 function checkMiraAchievements() {
-    let miraCommandsUsed = 0;
-    const miraCommands = ['mira_origem'];
-    
-    GameState.commandHistory.forEach(cmd => {
-        const baseCmd = cmd.split(' ')[0].toLowerCase();
-        if (miraCommands.includes(baseCmd)) {
-            miraCommandsUsed++;
-        }
-    });
-    
-    if (miraCommandsUsed >= 1 && !GameState.achievements.has('Última dos Castello')) {
-        unlockAchievement('Última dos Castello');
+let miraCommandsUsed = 0;
+const miraCommands = ['mira_origem'];
+
+GameState.commandHistory.forEach(cmd => {
+    const baseCmd = cmd.split(' ')[0].toLowerCase();
+    if (miraCommands.includes(baseCmd)) {
+        miraCommandsUsed++;
     }
+});
+
+if (miraCommandsUsed >= 1 && !GameState.achievements.has('Última dos Castello')) {
+    unlockAchievement('Última dos Castello');
 }
+}
+
 
 window.addEventListener('DOMContentLoaded', init);
 </script>
