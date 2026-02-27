@@ -1,0 +1,3601 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Diario de bordo v3.0</title>
+<style>
+    :root {
+        --sculk-green: #00ff9c;
+        --sculk-cyan: #0ae7ff;
+        --deep-void: #0a0a0a;
+        --dark-gray: #1a1a1a;
+        --text-gray: #cccccc;
+        --blood-red: #ff3b3b;
+        --alert-yellow: #ffd700;
+        --experiment-purple: #a042ff;
+        --sanity-blue: #4d8cff;
+        --tab-gray: #2a2a2a;
+        --luxury-gold: #FFD700;
+        --luxury-purple: #9370DB;
+        --desire-red: #FF6B6B;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        background-color: var(--deep-void);
+        color: var(--sculk-green);
+        font-family: 'Consolas', 'Monaco', monospace;
+        height: 100vh;
+        overflow: hidden;
+        position: relative;
+    }
+
+    /* Modo sobrevivência - efeitos de corrupção */
+    .corruption-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 9999;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .corruption-1 {
+        background: radial-gradient(circle at 30% 50%, rgba(160, 66, 255, 0.1) 0%, transparent 50%);
+    }
+
+    .corruption-2 {
+        background: radial-gradient(circle at 70% 30%, rgba(255, 59, 59, 0.1) 0%, transparent 50%);
+    }
+
+    /* Interface principal */
+    .app-container {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        padding: 10px;
+        gap: 10px;
+    }
+
+    /* Barra superior com múltiplas funcionalidades */
+    .top-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        background-color: rgba(26, 26, 26, 0.9);
+        border-radius: 4px;
+        border: 1px solid rgba(0, 255, 156, 0.1);
+    }
+
+    .system-info {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+    }
+
+    .stat-display {
+        display: flex;
+        gap: 15px;
+    }
+
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 12px;
+    }
+
+    .stat-bar {
+        width: 60px;
+        height: 6px;
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+        overflow: hidden;
+    }
+
+    .stat-fill {
+        height: 100%;
+        transition: width 0.3s;
+    }
+
+    .sanity-fill { background-color: var(--sanity-blue); }
+    .progress-fill { background-color: var(--sculk-green); }
+    .corruption-fill { background-color: var(--experiment-purple); }
+
+    /* Sistema de abas */
+    .tab-system {
+        display: flex;
+        background-color: var(--tab-gray);
+        border-radius: 4px 4px 0 0;
+        overflow: hidden;
+    }
+
+    .tab {
+        padding: 10px 20px;
+        cursor: pointer;
+        background-color: var(--dark-gray);
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        transition: background-color 0.2s;
+    }
+
+    .tab.active {
+        background-color: var(--deep-void);
+        border-bottom: 2px solid var(--sculk-green);
+    }
+
+    .tab:hover:not(.active) {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Conteúdo das abas */
+    .tab-content {
+        display: none;
+        flex: 1;
+        overflow: hidden;
+    }
+
+    .tab-content.active {
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Área principal (Terminal) */
+    #terminal-tab {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .terminal-log {
+        flex: 1;
+        overflow-y: auto;
+        padding: 15px;
+        background-color: rgba(10, 10, 10, 0.8);
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    .log-line {
+        margin-bottom: 8px;
+        white-space: pre-wrap;
+        word-break: break-word;
+        animation: fadeIn 0.3s;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    /* Área de mídia */
+    #media-tab {
+        padding: 20px;
+        overflow-y: auto;
+    }
+
+    .media-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 15px;
+        padding: 10px;
+    }
+
+    .media-item {
+        background-color: var(--dark-gray);
+        border-radius: 4px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.2s;
+        border: 1px solid rgba(0, 255, 156, 0.1);
+    }
+
+    .media-item:hover {
+        transform: translateY(-2px);
+        border-color: var(--sculk-green);
+    }
+
+    .media-preview {
+        width: 100%;
+        height: 150px;
+        background-color: rgba(0, 0, 0, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 40px;
+    }
+
+    .media-info {
+        padding: 10px;
+        font-size: 12px;
+    }
+
+    /* Área de mapa */
+    #map-tab {
+        padding: 20px;
+        position: relative;
+    }
+
+    .map-container {
+        width: 100%;
+        height: 100%;
+        background-color: var(--dark-gray);
+        border-radius: 4px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .map-node {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .map-node:hover {
+        transform: scale(1.5);
+        z-index: 10;
+    }
+
+    .map-node.lab { background-color: var(--sculk-green); }
+    .map-node.experiment { background-color: var(--blood-red); }
+    .map-node.sculk { background-color: var(--experiment-purple); }
+    .map-node.containment { background-color: var(--alert-yellow); }
+    .map-node.luxury { background-color: var(--luxury-gold); }
+
+    /* Área de estatísticas */
+    #stats-tab {
+        padding: 20px;
+        overflow-y: auto;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .stats-card {
+        background-color: var(--dark-gray);
+        padding: 20px;
+        border-radius: 4px;
+        border: 1px solid rgba(0, 255, 156, 0.1);
+    }
+
+    .stats-title {
+        color: var(--sculk-cyan);
+        margin-bottom: 15px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid rgba(0, 255, 156, 0.2);
+    }
+
+    .achievement-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .achievement {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px;
+        background-color: rgba(0, 0, 0, 0.3);
+        border-radius: 3px;
+    }
+
+    .achievement.unlocked {
+        border-left: 3px solid var(--alert-yellow);
+    }
+
+    .achievement.locked {
+        opacity: 0.5;
+        filter: grayscale(1);
+    }
+
+    /* Input area */
+    .input-area {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        background-color: var(--dark-gray);
+        border-radius: 4px;
+        margin-top: 10px;
+        border: 1px solid rgba(0, 255, 156, 0.1);
+    }
+
+    .prompt {
+        color: var(--sculk-cyan);
+        margin-right: 10px;
+        font-weight: bold;
+        min-width: 160px;
+    }
+
+    #command-input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: var(--sculk-green);
+        font-family: inherit;
+        font-size: 14px;
+        outline: none;
+        padding: 5px 0;
+    }
+
+    /* Modos de jogo */
+    .game-mode-selector {
+        display: flex;
+        gap: 10px;
+        margin-left: 20px;
+    }
+
+    .mode-btn {
+        padding: 6px 12px;
+        background-color: rgba(0, 255, 156, 0.1);
+        border: 1px solid var(--sculk-green);
+        border-radius: 3px;
+        color: var(--sculk-green);
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.2s;
+    }
+
+    .mode-btn:hover {
+        background-color: rgba(0, 255, 156, 0.2);
+    }
+
+    .mode-btn.active {
+        background-color: var(--sculk-green);
+        color: var(--deep-void);
+    }
+
+    /* Sistema de puzzles */
+    .puzzle-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.9);
+        z-index: 10000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .puzzle-container {
+        background-color: var(--dark-gray);
+        padding: 30px;
+        border-radius: 8px;
+        border: 2px solid var(--experiment-purple);
+        max-width: 600px;
+        width: 90%;
+    }
+
+    .puzzle-title {
+        color: var(--experiment-purple);
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    .puzzle-content {
+        margin-bottom: 20px;
+    }
+
+    .puzzle-input {
+        width: 100%;
+        padding: 10px;
+        background-color: rgba(0, 0, 0, 0.5);
+        border: 1px solid var(--sculk-green);
+        color: var(--sculk-green);
+        font-family: inherit;
+        margin-bottom: 15px;
+    }
+
+    .puzzle-buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+    }
+
+    /* Classes de estilo para logs */
+    .error { color: var(--blood-red); }
+    .warning { color: var(--alert-yellow); }
+    .success { color: var(--sculk-green); }
+    .highlight { color: var(--sculk-cyan); }
+    .info { color: var(--text-gray); }
+    .purple { color: var(--experiment-purple); }
+    .blue { color: var(--sanity-blue); }
+    .gold { color: var(--luxury-gold); }
+    .luxury-purple { color: var(--luxury-purple); }
+
+    /* Scrollbar */
+    .terminal-log::-webkit-scrollbar,
+    #media-tab::-webkit-scrollbar,
+    #stats-tab::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .terminal-log::-webkit-scrollbar-track,
+    #media-tab::-webkit-scrollbar-track,
+    #stats-tab::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.2);
+    }
+
+    .terminal-log::-webkit-scrollbar-thumb,
+    #media-tab::-webkit-scrollbar-thumb,
+    #stats-tab::-webkit-scrollbar-thumb {
+        background: var(--sculk-green);
+        border-radius: 4px;
+    }
+
+    /* Animações */
+    @keyframes pulse {
+        0%, 100% { opacity: 0.5; }
+        50% { opacity: 1; }
+    }
+
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+        20%, 40%, 60%, 80% { transform: translateX(5px); }
+    }
+
+    @keyframes desirePulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; color: var(--desire-red); }
+    }
+
+    .pulse {
+        animation: pulse 2s infinite;
+    }
+
+    .shake {
+        animation: shake 0.5s;
+    }
+
+    .desire-pulse {
+        animation: desirePulse 2s infinite;
+    }
+
+    /* Responsividade */
+    @media (max-width: 1200px) {
+        .stat-display {
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .game-mode-selector {
+            flex-wrap: wrap;
+        }
+    }
+    
+    /* =========================
+       OLHO DO ABISMO
+    ========================= */
+    #void-eye-container {
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(circle at center, #111 0%, #000 70%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 20000;
+        animation: voidFadeOut 4s ease forwards;
+        animation-delay: 6s;
+    }
+
+    #void-eye {
+        width: 320px;
+        opacity: 0;
+        animation:
+            eyeAppear 2s ease forwards,
+            eyeFloat 6s ease-in-out infinite,
+            eyePulse 4s ease-in-out infinite;
+        animation-delay: 1s;
+        filter:
+            drop-shadow(0 0 25px rgba(255, 215, 0, 0.4))
+            drop-shadow(0 0 60px rgba(160, 66, 255, 0.2));
+    }
+
+    /* Aparição lenta */
+    @keyframes eyeAppear {
+        from {
+            opacity: 0;
+            transform: scale(0.8);
+        }
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    /* Flutuação antinatural */
+    @keyframes eyeFloat {
+        0%, 100% {
+            transform: translateY(0) scale(1);
+        }
+        50% {
+            transform: translateY(-12px) scale(1.02);
+        }
+    }
+
+    /* Pulso de consciência */
+    @keyframes eyePulse {
+        0%, 100% {
+            filter:
+                drop-shadow(0 0 20px rgba(255, 215, 0, 0.3))
+                drop-shadow(0 0 50px rgba(160, 66, 255, 0.15));
+        }
+        50% {
+            filter:
+                drop-shadow(0 0 40px rgba(255, 215, 0, 0.6))
+                drop-shadow(0 0 90px rgba(160, 66, 255, 0.4));
+        }
+    }
+
+    @keyframes greedPulse {
+        0%, 100% { 
+            filter: 
+                drop-shadow(0 0 30px rgba(255, 215, 0, 0.6))
+                drop-shadow(0 0 70px rgba(160, 66, 255, 0.4))
+                drop-shadow(0 0 120px rgba(255, 59, 59, 0.2));
+        }
+        50% { 
+            filter: 
+                drop-shadow(0 0 50px rgba(255, 215, 0, 0.9))
+                drop-shadow(0 0 100px rgba(160, 66, 255, 0.6))
+                drop-shadow(0 0 180px rgba(255, 59, 59, 0.4));
+        }
+    }
+
+    /* Desaparecer no vazio */
+    @keyframes voidFadeOut {
+        to {
+            opacity: 0;
+            visibility: hidden;
+        }
+    }
+    
+    /* =========================
+       EFEITOS DE GLITCH
+    ========================= */
+    .glitch-effect {
+        position: relative;
+        animation: glitch 0.3s infinite;
+    }
+
+    @keyframes glitch {
+        0% {
+            transform: translate(0);
+            text-shadow: 0 0 0 rgba(255, 0, 0, 0);
+        }
+        20% {
+            transform: translate(-2px, 2px);
+            text-shadow: 2px 0 5px rgba(255, 0, 0, 0.5);
+        }
+        40% {
+            transform: translate(2px, -1px);
+            text-shadow: -2px 0 5px rgba(0, 255, 156, 0.5);
+        }
+        60% {
+            transform: translate(-1px, 1px);
+            text-shadow: 0 2px 5px rgba(160, 66, 255, 0.5);
+        }
+        80% {
+            transform: translate(1px, -2px);
+            text-shadow: 0 -2px 5px rgba(255, 59, 59, 0.5);
+        }
+        100% {
+            transform: translate(0);
+            text-shadow: 0 0 0 rgba(255, 0, 0, 0);
+        }
+    }
+
+    /* =========================
+       SANGUE ESCORRENDO
+    ========================= */
+    .blood-effect {
+        position: fixed;
+        pointer-events: none;
+        z-index: 9998;
+        opacity: 0;
+    }
+
+    .blood-drip {
+        position: absolute;
+        background: linear-gradient(to bottom, 
+            transparent 0%, 
+            var(--blood-red) 10%, 
+            rgba(139, 0, 0, 0.8) 30%, 
+            transparent 100%);
+        width: 3px;
+        animation: drip 15s linear forwards;
+    }
+
+    @keyframes drip {
+        0% {
+            height: 0;
+            top: -10px;
+            opacity: 1;
+        }
+        90% {
+            opacity: 0.8;
+        }
+        100% {
+            height: 110vh;
+            top: 100vh;
+            opacity: 0;
+        }
+    }
+
+    /* =========================
+       OLHOS NO FUNDO
+    ========================= */
+    .eye-background {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: -1;
+        opacity: 0;
+        transition: opacity 2s;
+    }
+
+    .eye {
+        position: absolute;
+        width: 40px;
+        height: 40px;
+        background: radial-gradient(circle at 30% 30%, 
+            rgba(255, 255, 255, 0.1) 0%,
+            rgba(160, 66, 255, 0.05) 30%,
+            transparent 70%);
+        border-radius: 50%;
+        box-shadow: 
+            0 0 20px rgba(160, 66, 255, 0.3),
+            inset 0 0 10px rgba(255, 255, 255, 0.1);
+        animation: eyeBlink 5s infinite;
+    }
+
+    .eye::before {
+        content: '';
+        position: absolute;
+        width: 15px;
+        height: 15px;
+        background: rgba(0, 255, 156, 0.3);
+        border-radius: 50%;
+        top: 12px;
+        left: 12px;
+        animation: pupilMove 10s infinite alternate;
+    }
+
+    @keyframes eyeBlink {
+        0%, 96%, 100% { transform: scaleY(1); }
+        98% { transform: scaleY(0.1); }
+    }
+
+    @keyframes pupilMove {
+        0% { transform: translate(0, 0); }
+        25% { transform: translate(5px, 5px); }
+        50% { transform: translate(-5px, -5px); }
+        75% { transform: translate(3px, -3px); }
+        100% { transform: translate(-3px, 3px); }
+    }
+
+    /* =========================
+       RESPIRAÇÃO DO TERMINAL
+    ========================= */
+    .breathing-text {
+        animation: breathe 4s ease-in-out infinite;
+    }
+
+    @keyframes breathe {
+        0%, 100% {
+            opacity: 0.7;
+            transform: scale(1);
+        }
+        50% {
+            opacity: 1;
+            transform: scale(1.02);
+        }
+    }
+
+    /* =========================
+       TREMEDEIRA (SANIDADE BAIXA)
+    ========================= */
+    .low-sanity-shake {
+        animation: sanityShake 0.5s infinite;
+    }
+
+    @keyframes sanityShake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-1px); }
+        20%, 40%, 60%, 80% { transform: translateX(1px); }
+    }
+
+    /* =========================
+       PULSO DE CORRUPÇÃO
+    ========================= */
+    .corruption-pulse {
+        animation: corruptionPulse 3s infinite;
+    }
+
+    @keyframes corruptionPulse {
+        0%, 100% { 
+            box-shadow: 0 0 5px rgba(160, 66, 255, 0.1);
+        }
+        50% { 
+            box-shadow: 0 0 20px rgba(160, 66, 255, 0.4);
+        }
+    }
+
+    /* =========================
+       EFEITOS ESPECIAIS DO GRIMM
+    ========================= */
+    @keyframes grimmBlue {
+        0%, 100% { color: var(--sculk-cyan); }
+        50% { color: #4a9eff; }
+    }
+
+    @keyframes panteraGlow {
+        0%, 100% { box-shadow: 0 0 10px rgba(74, 158, 255, 0.3); }
+        50% { box-shadow: 0 0 25px rgba(74, 158, 255, 0.7); }
+    }
+
+    .grimm-effect {
+        animation: grimmBlue 2s infinite;
+    }
+
+    .pantera-glow {
+        animation: panteraGlow 3s infinite;
+    }
+</style>
+</head>
+<body>
+    <!-- Efeitos Visuais -->
+<div id="blood-container" class="blood-effect"></div>
+<div id="eye-background" class="eye-background"></div>
+<div id="glitch-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:9997; opacity:0; background:linear-gradient(transparent 50%, rgba(255,0,0,0.02) 50%); background-size:100% 4px; mix-blend-mode:overlay;"></div>
+
+<!-- Sistema de Áudio -->
+<audio id="typing-sound" preload="auto" style="display:none;"></audio>
+<audio id="whisper-sound" preload="auto" style="display:none;"></audio>
+<audio id="heartbeat-sound" preload="auto" style="display:none;" loop></audio>
+<audio id="ambient-sound" preload="auto" style="display:none;" loop></audio>
+<audio id="glitch-sound" preload="auto" style="display:none;"></audio>
+<audio id="blood-drip-sound" preload="auto" style="display:none;"></audio>
+    
+<div id="void-eye-container">
+    <img src="olhos da ganancia.png" id="void-eye">
+</div>
+
+    <!-- Overlays -->
+    <div class="corruption-overlay corruption-1"></div>
+    <div class="corruption-overlay corruption-2"></div>
+    
+    <!-- Puzzle Overlay -->
+    <div class="puzzle-overlay" id="puzzle-overlay">
+        <div class="puzzle-container">
+            <div class="puzzle-title" id="puzzle-title">ENIGMA DO ABISMO</div>
+            <div class="puzzle-content" id="puzzle-content"></div>
+            <input type="text" class="puzzle-input" id="puzzle-input" placeholder="Sua resposta...">
+            <div class="puzzle-buttons">
+                <button class="mode-btn" onclick="submitPuzzle()">Enviar</button>
+                <button class="mode-btn" onclick="closePuzzle()" style="background-color: rgba(255, 59, 59, 0.1); border-color: var(--blood-red); color: var(--blood-red);">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div class="app-container">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="system-info">
+                <div class="system-title">DIÁRIO DE BORDO v3.0</div>
+                <div class="game-mode-selector">
+                    <div class="mode-btn" data-mode="story" onclick="changeGameMode('story')">HISTÓRIA</div>
+                    <div class="mode-btn" data-mode="investigation" onclick="changeGameMode('investigation')">INVESTIGAÇÃO</div>
+                    <div class="mode-btn" data-mode="survival" onclick="changeGameMode('survival')">SOBREVIVÊNCIA</div>
+                </div>
+            </div>
+            
+            <div class="stat-display">
+                <div class="stat-item">
+                    <span>SAÚDE MENTAL</span>
+                    <div class="stat-bar">
+                        <div class="stat-fill sanity-fill" id="sanity-bar"></div>
+                    </div>
+                    <span id="sanity-value">80%</span>
+                </div>
+                <div class="stat-item">
+                    <span>PROGRESSO</span>
+                    <div class="stat-bar">
+                        <div class="stat-fill progress-fill" id="progress-bar"></div>
+                    </div>
+                    <span id="progress-value">30%</span>
+                </div>
+                <div class="stat-item">
+                    <span>CORRUPÇÃO</span>
+                    <div class="stat-bar">
+                        <div class="stat-fill corruption-fill" id="corruption-bar"></div>
+                    </div>
+                    <span id="corruption-value">10%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab System -->
+        <div class="tab-system">
+            <div class="tab active" data-tab="terminal" onclick="changeTab('terminal')">TERMINAL</div>
+            <div class="tab" data-tab="media" onclick="changeTab('media')">MÍDIA</div>
+            <div class="tab" data-tab="map" onclick="changeTab('map')">MAPA</div>
+            <div class="tab" data-tab="stats" onclick="changeTab('stats')">ESTATÍSTICAS</div>
+        </div>
+
+        <!-- Tab Contents -->
+        <div class="tab-content active" id="terminal-tab">
+            <div class="terminal-log" id="terminal-log"></div>
+            <div class="input-area">
+                <div class="prompt" id="prompt">pesquisador@lab:~$</div>
+                <input type="text" id="command-input" autofocus autocomplete="off" placeholder="Digite 'help' para começar...">
+            </div>
+        </div>
+
+        <div class="tab-content" id="media-tab">
+            <div class="media-grid" id="media-grid">
+                <!-- Media items will be inserted here -->
+            </div>
+        </div>
+
+        <div class="tab-content" id="map-tab">
+            <div class="map-container" id="map-container">
+                <!-- Map nodes will be inserted here -->
+            </div>
+        </div>
+
+        <div class="tab-content" id="stats-tab">
+            <div class="stats-grid" id="stats-grid">
+                <!-- Statistics will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+<script>
+// ==================== CONSTANTES E DADOS ====================
+const GameState = {
+    mode: 'story',
+    sanity: 80,
+    progress: 0,
+    corruption: 10,
+    level: 1,
+    xp: 0,
+    achievements: new Set(),
+    unlockedExperiments: new Set(),
+    discoveredMedia: new Set(),
+    visitedLocations: new Set(),
+    commandHistory: [],
+    puzzleProgress: {},
+    investigationProgress: {},
+    roleplayChoices: [],
+    corruptionInterval: null,
+    historyIndex: undefined
+};
+
+const achievementsList = {
+    'Primeiro Acesso': { description: 'Acessou o sistema pela primeira vez', unlocked: false },
+    'Decifrador': { description: 'Resolveu um puzzle de autenticação', unlocked: false },
+    'Pesquisador Iniciante': { description: 'Desbloqueou 2 experimentos', unlocked: false },
+    'Conhecedor do Abismo': { description: 'Completou a descriptografia', unlocked: false },
+    'Investigador': { description: 'Resolveu um mistério completo', unlocked: false },
+    'Resistente': { description: 'Manteve sanidade acima de 50% no modo sobrevivência', unlocked: false },
+    'Arquivista': { description: 'Descobriu todas as mídias', unlocked: false },
+    'Explorador': { description: 'Visitou todos os locais no mapa', unlocked: false },
+    'Mestre do Terminal': { description: 'Usou todos os tipos de comandos', unlocked: false },
+    'Herdeira do Bazar': { description: 'Descobriu a história da família Facilier', unlocked: false },
+    'Mestra da Persuasão': { description: 'Aprendeu sobre as técnicas de Violet', unlocked: false },
+    'Conhecedora de Tarot': { description: 'Estudou as cartas de Violet', unlocked: false },
+    'Observador do Abismo': { description: 'Acessou 3 experimentos do Olho da Ganância', unlocked: false },
+    'Mestre da Ganância': { description: 'Acessou todos os experimentos do Olho da Ganância', unlocked: false },
+    'Conhecedor do Vácuo': { description: 'Estudou a anulação sensorial completa', unlocked: false },
+    'Arquitetor da Vida': { description: 'Compreendeu o projeto de gestação híbrida', unlocked: false },
+    'Acesso Secreto': { description: 'Acessou o arquivo protegido de Ushka', unlocked: false },
+    'Observador do Sono': { description: 'Descobriu os hábitos sonolentos de Hypnos', unlocked: false },
+    'Colecionador Secreto': { description: 'Descobriu o segredo das pelúcias de Hypnos', unlocked: false },
+    'Abandono Traumático': { description: 'Testemunhou o abandono de Hypnos pela mãe', unlocked: false },
+    'Testemunha do Desespero': { description: 'Presenciou o colapso emocional de Hypnos', unlocked: false },
+    'Fera Primordial': { description: 'Testemunhou a origem bestial de Grimm', unlocked: false },
+    'Rei Devorador': { description: 'Presenciou a ascensão canibal de Grimm', unlocked: false },
+    'Encontro do Abismo': { description: 'Viu o confronto entre Grimm e Violet', unlocked: false },
+    'Cachorro Domado': { description: 'Testemunhou a humilhação de Grimm', unlocked: false },
+    'Última dos Castello': { description: 'Conheceu a origem miserável de Mira Castello', unlocked: false },
+    'Conhecedor da Besta': { description: 'Descobriu toda a história de Grimm', unlocked: false }
+};
+
+const mediaItems = {
+    'exp184_1': {
+        title: 'Cobaia B-07 - Semana 4',
+        type: 'image',
+        description: 'Primeiros sinais de integração Sculk-vascular',
+        content: '🔬 [IMAGEM: Sistema circulatório com veias esverdeadas]'
+    },
+    'exp184_2': {
+        title: 'Autópsia A-02',
+        type: 'image',
+        description: 'Danos neurológicos por tétano+raiva',
+        content: '🧠 [IMAGEM: Tecido cerebral com múltiplas hemorragias]'
+    },
+    'exp201_1': {
+        title: 'Feto Sculk - Semana 12',
+        type: 'image',
+        description: 'Ultrassom mostrando veias esverdeadas',
+        content: '👶 [IMAGEM: Feto com padrões luminescentes]'
+    },
+    'exp201_2': {
+        title: 'Neonato Híbrido',
+        type: 'image',
+        description: 'Nascimento do primeiro híbrido viável',
+        content: '✨ [IMAGEM: Recém-nascido com pele translúcida]'
+    },
+    'exp201_3': {
+        title: 'Registro de Sobrevivência',
+        type: 'text',
+        description: 'Notas sobre o neonato',
+        content: '📄 [TEXTO: "6 horas de vida. Dados em análise."]'
+    },
+    'lab_map': {
+        title: 'Mapa do Laboratório',
+        type: 'map',
+        description: 'Layout completo',
+        content: '🗺️ [MAPA: Laboratório em área remota]'
+    },
+    'audio_log_1': {
+        title: 'Gravação #23',
+        type: 'audio',
+        description: 'Diário de progresso',
+        content: '🎧 [ÁUDIO: "Progresso nos experimentos..."]'
+    },
+    'violet_diario': {
+        title: 'Diário de Violet - Página 1',
+        type: 'text',
+        description: 'Primeiras anotações de Violet',
+        content: '"Minha família é estranha. Mamãe é bokor, papai vende bonecos. E eu? Eu observo. E aprendo."'
+    },
+    'bazar_foto': {
+        title: 'Fotos do BaZzar',
+        type: 'image',
+        description: 'Loja da família Facilier',
+        content: '🏪 [IMAGEM: Loja antiga com bonecos de pano na vitrine]'
+    },
+    'boneco_voodoo': {
+        title: 'Boneco de Pano Especial',
+        type: 'image',
+        description: 'Boneco criado por Violet',
+        content: '🧸 [IMAGEM: Boneco de pano com detalhes misteriosos]'
+    },
+    'tarot_cards': {
+        title: 'Cartas de Tarot de Violet',
+        type: 'image',
+        description: 'Baralho pessoal de Violet',
+        content: '🃏 [IMAGEM: Cartas de tarot artesanais]'
+    },
+    'exp047_1': {
+        title: 'Registro de Privação de Sono - Dia 10',
+        type: 'image',
+        description: 'Cobaia em estado avançado de privação',
+        content: '🕰️ [IMAGEM: Espécime com olhos dilatados, tremores visíveis]'
+    },
+    'exp047_2': {
+        title: 'EEG - Atividade Cerebral Anormal',
+        type: 'image',
+        description: 'Padrões cerebrais durante colapso',
+        content: '📊 [IMAGEM: Ondas cerebrais caóticas]'
+    },
+    'exp089_1': {
+        title: 'Observador - Configuração Final',
+        type: 'image',
+        description: 'Posicionamento do espécime',
+        content: '👁️ [IMAGEM: Cobaia imobilizada com vista para laboratório]'
+    },
+    'exp089_2': {
+        title: 'Registro de Comunicação por Piscar',
+        type: 'text',
+        description: 'Sistema desenvolvido pela cobaia',
+        content: '📝 [TEXTO: 1 piscar = não, 2 piscar = sim, padrões complexos observados]'
+    },
+    'exp103_1': {
+        title: 'Procedimento de Anulação Sensorial',
+        type: 'image',
+        description: 'Fase final do procedimento',
+        content: '⚫ [IMAGEM: Espécime completamente isolado]'
+    },
+    'exp103_2': {
+        title: 'Monitoramento de Estado Catatônico',
+        type: 'text',
+        description: 'Registros diários',
+        content: '📋 [TEXTO: Dia 21 - Espécime imóvel, sinais vitais mínimos]'
+    },
+    'exp156_1': {
+        title: 'Mapeamento Cerebral Pré-cirúrgico',
+        type: 'image',
+        description: 'Áreas cerebrais marcadas para remoção',
+        content: '🧠 [IMAGEM: Cérebro com áreas demarcadas]'
+    },
+    'exp156_2': {
+        title: 'Resultados Pós-lobotomia Segmentar',
+        type: 'text',
+        description: 'Observações comportamentais',
+        content: '📄 [TEXTO: Semana 7 - Vegetal consciente criado]'
+    },
+    'exp184_1': {
+        title: 'Infecção Combinada - Autópsia Cobaia 1',
+        type: 'image',
+        description: 'Guerra biológica interna',
+        content: '🦠 [IMAGEM: Tecidos com múltiplas infecções]'
+    },
+    'exp184_2': {
+        title: 'Sculk Vascular - Cobaia 7',
+        type: 'image',
+        description: 'Sistema circulatório híbrido',
+        content: '💚 [IMAGEM: Veias esverdeadas visíveis]'
+    },
+    'exp184_3': {
+        title: 'Análise Microscópica Sculk-Bactéria',
+        type: 'image',
+        description: 'Fagocitose observada',
+        content: '🔬 [IMAGEM: Sculk consumindo bactérias]'
+    },
+    'exp201_1': {
+        title: 'Cesariana Exploratória - Semana 16',
+        type: 'image',
+        description: 'Feto removido e estudado',
+        content: '🤰 [IMAGEM: Procedimento em andamento]'
+    },
+    'exp201_2': {
+        title: 'Desenvolvimento Fetal Sculk - Semana 12',
+        type: 'image',
+        description: 'Feto com modificações visíveis',
+        content: '👶 [IMAGEM: Feto com veias esverdeadas]'
+    },
+    'exp201_3': {
+        title: 'Nascimento Híbrido - Neonato',
+        type: 'image',
+        description: 'Primeiro híbrido sculk-humano',
+        content: '✨ [IMAGEM: Neonato com características mistas]'
+    },
+    'exp201_4': {
+        title: 'Análise do Cordão Umbilical Cristalino',
+        type: 'text',
+        description: 'Estrutura única observada',
+        content: '💎 [TEXTO: Textura cristalina, propriedades desconhecidas]'
+    },
+    'ushka_1': {
+        title: 'Ushka - Design Base',
+        type: 'image',
+        description: 'ESPECIFICAÇÕES INICIAIS EXP-089-U',
+        content: '🐾 [IMAGEM: Esquema do amálgama felina]'
+    }
+};
+
+const experiments = {
+    'EXPERIMENTO047': {
+        code: 'INSÔNIA',
+        title: 'EXPERIMENTO 047: PRIVAÇÃO TOTAL DE SONO',
+        classification: 'NÍVEL 6 - OLHO DA GANÂNCIA',
+        corrupted: true,
+        content: `
+<strong>👁️ REALIZADO SOB INFLUÊNCIA DO OLHO DA GANÂNCIA</strong>
+
+<strong>Cobaia:</strong> Espécime masculino, 28 anos, saudável
+
+<strong>Objetivo:</strong> Determinar o ponto de colapso neurológico irreversível por privação de sono
+
+<strong>Dia 1-3:</strong> Cobaia mantida acordada através de estímulos sonoros e luminosos. Sinais vitais estáveis. Irritabilidade crescente.
+
+<strong>Dia 4-7:</strong> Aplicação de estimulantes químicos para prevenir sono REM. Tremores começam. Fala desconexa ocasional. Alucinações visuais leves relatadas.
+
+<strong>Dia 8-11:</strong> Deterioração acelerada. Alucinações auditivas constantes. Cobaia conversa com entidades inexistentes. Paranoia severa. Tentativas de automutilação prevenidas por contenções.
+
+<strong>Dia 12-15:</strong> Colapso cognitivo significativo. Perda de reconhecimento de objetos básicos. Movimentos involuntários constantes. Função renal comprometida.
+
+<strong>Dia 16:</strong> Convulsões generalizadas. Hemorragia cerebral detectada. Cobaia entrou em coma. Experimento finalizado.
+
+<strong>Conclusão:</strong> Limite humano aproximado: 15 dias com suporte químico. A mente se fragmenta antes do corpo. Fascinante como a consciência se dissolve gradualmente.
+
+<strong>👁️ OBSERVAÇÃO DO OLHO:</strong> "O desejo por conhecimento sobre os limites humanos justifica qualquer meio."
+        `,
+        media: ['exp047_1', 'exp047_2'],
+        location: { x: 20, y: 30 }
+    },
+    
+    'EXPERIMENTO089': {
+        code: 'OBSERVADOR',
+        title: 'EXPERIMENTO 089: PROJETO OBSERVADOR',
+        classification: 'NÍVEL 8 - OLHO DA GANÂNCIA',
+        corrupted: true,
+        content: `
+<strong>👁️ REALIZADO SOB INFLUÊNCIA DO OLHO DA GANÂNCIA</strong>
+
+<strong>Cobaia:</strong> Espécime feminino, 34 anos
+
+<strong>Objetivo:</strong> Criar observador sensorial puro - remover capacidade de interação mantendo percepção total
+
+<strong>Procedimento:</strong>
+• Remoção cirúrgica de cordas vocais
+• Secção de tendões em todos os membros
+• Paralisia facial induzida
+• Manutenção completa de visão, audição e consciência
+
+<strong>Semana 1:</strong> Cobaia demonstra pânico extremo através de lágrimas (única forma de expressão restante). Tentativas frenéticas de comunicação através de movimentos oculares.
+
+<strong>Semana 2-4:</strong> Padrão interessante emerge. Cobaia começa acompanhar meus movimentos obsessivamente com os olhos. Desenvolveu sistema próprio de piscar para comunicar sim/não após dedução própria.
+
+<strong>Mês 2:</strong> Notável resignação. Cobaia agora observa passivamente. Questionamento filosófico: ela ainda é humana ou tornou-se apenas uma câmera biológica?
+
+<strong>Mês 3:</strong> Instalei cobaia em posição com vista para sala de experimentos. Forço-a a observar procedimentos em outros espécimes. Suas pupilas dilatam, mas não pode desviar olhar. Perfeito.
+
+<strong>Observações:</strong> Este espécime permanece funcional. Manterei indefinidamente como testemunha silenciosa do meu trabalho.
+
+<strong>👁️ OBSERVAÇÃO DO OLHO:</strong> "O desejo por uma testemunha eterna para meus feitos consome-me."
+        `,
+        media: ['exp089_1', 'exp089_2'],
+        location: { x: 40, y: 50 }
+    },
+    
+    'EXPERIMENTO103': {
+        code: 'VÁCUO',
+        title: 'EXPERIMENTO 103: ANULAÇÃO SENSORIAL COMPLETA',
+        classification: 'NÍVEL 9 - OLHO DA GANÂNCIA',
+        corrupted: true,
+        content: `
+<strong>👁️ REALIZADO SOB INFLUÊNCIA DO OLHO DA GANÂNCIA</strong>
+
+<strong>Cobaia:</strong> Espécime masculino, 41 anos
+
+<strong>Objetivo:</strong> Remover todos os cinco sentidos e documentar estado mental resultante
+
+<strong>Fase 1 - Visão:</strong> Enucleação bilateral. Cauterização de nervos ópticos. Cobaia apresenta desespero esperado.
+
+<strong>Fase 2 - Audição:</strong> Perfuração controlada de tímpanos. Destruição de cóclea com inserção de ácido diluído. Cobaia agora em trevas e silêncio.
+
+<strong>Fase 3 - Paladar/Olfato:</strong> Cauterização química de papilas gustativas. Destruição de bulbo olfatório via inserção nasal. Alimentação por sonda necessária.
+
+<strong>Fase 4 - Tato:</strong> Procedimento mais complexo. Secção sistemática de nervos periféricos em todo corpo. Processo levou 6 horas.
+
+<strong>Pós-procedimento - Dia 1:</strong> Como determinar se espécime ainda está consciente? Não responde a estímulos. Batimentos cardíacos acelerados sugerem terror interno.
+
+<strong>Dia 3-7:</strong> Espécime desenvolveu movimentos repetitivos bizarros - balanço constante da cabeça. Auto-estimulação na ausência de input externo?
+
+<strong>Dia 14:</strong> Observação perturbadora. Espécime parece "gritar" silenciosamente, boca aberta, não há som. Como sabe que está gritando se não pode se ouvir?
+
+<strong>Dia 21:</strong> Espécime entrou em estado catatônico. Ainda vivo, mas completamente imóvel. É isto o inferno? Consciência presa em vácuo absoluto?
+
+<strong>Conclusão:</strong> Impossível determinar conteúdo mental definitivo. Manterei espécime vivo o máximo possível. Que experiência deve ser existir em nada absoluto.
+
+<strong>👁️ OBSERVAÇÃO DO OLHO:</strong> "A ganância por conhecer o vazio absoluto... até onde pode levar?"
+        `,
+        media: ['exp103_1', 'exp103_2'],
+        location: { x: 60, y: 70 }
+    },
+    
+    'EXPERIMENTO156': {
+        code: 'LOBOTOMIA',
+        title: 'EXPERIMENTO 156: MODULAÇÃO CEREBRAL LOBOTÔMICA',
+        classification: 'NÍVEL 7 - OLHO DA GANÂNCIA',
+        corrupted: true,
+        content: `
+<strong>👁️ REALIZADO SOB INFLUÊNCIA DO OLHO DA GANÂNCIA</strong>
+
+<strong>Objetivo:</strong> Mapear funções da personalidade através de remoção cirúrgica sistemática de áreas cerebrais
+
+<strong>Cobaia A:</strong> Lobotomia pré-frontal clássica. Resultado: docilidade extrema, perda de iniciativa. Tedioso e previsível.
+
+<strong>Cobaia B:</strong> Remoção de amígdala bilateral. Resultado: ausência total de medo. Espécime se aproxima de estímulos dolorosos voluntariamente. Interessante, mas limitado.
+
+<strong>Cobaia C:</strong> Experimento mais ambicioso, remoção segmentar progressiva do córtex.
+
+<strong>Semana 1:</strong> Remoção de lobo frontal direito parcial. Perda de inibição social, comportamento inadequado.
+
+<strong>Semana 3:</strong> Remoção de área de Broca. Perda total de fala, mas compreensão mantida. Frustração extrema.
+
+<strong>Semana 5:</strong> Remoção de área de Wernicke. Agora não compreende linguagem. Produz sons sem sentido.
+
+<strong>Semana 7:</strong> Remoção de córtex motor primário esquerdo. Paralisia do lado direito.
+
+<strong>Observação final:</strong> Cobaia C agora é casca humana. Respira, olha, mas não há pessoa restante. Criei vegetal consciente. Devo sentir orgulho ou decepção?
+
+<strong>👁️ OBSERVAÇÃO DO OLHO:</strong> "A ganância por desmontar a mente humana peça por peça..."
+        `,
+        media: ['exp156_1', 'exp156_2'],
+        location: { x: 80, y: 40 }
+    },
+    
+    'EXPERIMENTO184': {
+        code: 'INFECÇÕES',
+        title: 'EXPERIMENTO 184: INFECÇÕES INDUZIDAS & SCULK',
+        classification: 'NÍVEL 8 - OLHO DA GANÂNCIA',
+        corrupted: true,
+        content: `
+<strong>👁️ REALIZADO SOB INFLUÊNCIA DO OLHO DA GANÂNCIA</strong>
+
+<strong>Série A - Patógenos Combinados:</strong>
+
+<strong>Cobaia 1:</strong> Injeção simultânea de tuberculose, gangrena gasosa e infecção fúngica sistêmica. Morte em 8 dias. Autópsia revelou guerra biológica interna fascinante.
+
+<strong>Cobaia 2:</strong> Tétano + raiva. Sintomas conflitantes espetaculares. Espasmos tetânicos durante hidrofobia. Cobaia literalmente se debateu até quebrar própria coluna.
+
+<strong>Série B - Sculk como Vetor:</strong>
+
+<strong>Cobaia 5:</strong> Infecção de sculk em ferida aberta com sepse bacteriana simultânea. RESULTADO NOTÁVEL: Sculk fagocitou bactérias enquanto se espalhava. Cobaia sobreviveu 3 semanas além do esperado.
+
+<strong>Cobaia 7:</strong> Sculk + vírus hemorrágico. Sculk tentou "reparar" vasos sanguíneos rompidos. Criou estrutura vascular alternativa esverdeada. Cobaia ainda viva após 2 meses, mas 30% dos sistemas circulatórios são sculk.
+
+<strong>Conclusão:</strong> Sculk tem propriedades simbióticas fascinantes. Pode ser chave para criar vida verdadeiramente híbrida.
+
+<strong>👁️ OBSERVAÇÃO DO OLHO:</strong> "A ganância por criar vida através do caos... o Sculk é minha ferramenta."
+        `,
+        media: ['exp184_1', 'exp184_2', 'exp184_3'],
+        location: { x: 30, y: 60 }
+    },
+    
+    'EXPERIMENTO201': {
+        code: 'GESTAÇÃO',
+        title: 'EXPERIMENTO 201: PROJETO GESTAÇÃO',
+        classification: 'NÍVEL 10 - OLHO DA GANÂNCIA',
+        corrupted: true,
+        content: `
+<strong>👁️ REALIZADO SOB INFLUÊNCIA DO OLHO DA GANÂNCIA</strong>
+
+<strong>Objetivo:</strong> Compreender e manipular processo completo de gestação humana
+
+<strong>Fase 1 - Observação Direta:</strong>
+
+<strong>Cobaia Gestante A:</strong> Grávida, 3 meses. Cesariana exploratória sem anestesia. Útero exposto e mantido aberto com afastadores. Feto visível através de membrana amniótica intacta.
+• Movimento fetal observado diretamente
+• Batimentos cardíacos fetais audíveis sem equipamento
+• Cobaia permaneceu consciente por 40 minutos antes de choque hipovolêmico
+
+<strong>Cobaia Gestante B:</strong> Grávida, 6 meses. Abertura uterina completa. Remoção parcial de líquido amniótico para observação fetal aprimorada.
+• Feto respondeu à luz externa
+• Fotografias detalhadas obtidas
+• Tentativa de "interação" tocando feto diretamente - resultado em parto prematuro e morte fetal
+
+<strong>Fase 2 - Gestação Induzida:</strong>
+
+<strong>Cobaia C (não-grávida):</strong> Fertilização in vivo forçada. Inseminação seguida de monitoramento semanal via ultrassom.
+• Confirmação de gravidez: Semana 3
+• Documentação fotográfica do desenvolvimento: Mensal
+• Semana 16: Cesariana exploratória. Feto removido, estudado, retornado. Cobaia sobreviveu. Feto não.
+
+<strong>Fase 3 - Sculk Gestacional:</strong>
+
+<strong>Cobaia D:</strong> Injeção de sculk microscópico em útero durante fase inicial de gravidez.
+• Semana 4: Sculk integrou-se à placenta
+• Semana 8: Feto apresenta veias esverdeadas visíveis via ultrassom
+• Semana 12: Cesariana investigativa. Feto VIVO, mas modificado. Pele parcialmente translúcida. Olhos com brilho esverdeado tênue.
+
+<strong>DECISÃO:</strong> Permitir gestação continuar para observar nascimento de híbrido sculk-humano
+
+<strong>Semana 24:</strong> Cobaia D entrou em trabalho de parto prematuro.
+• Parto observado completamente sem intervenção
+• Neonato nasceu VIVO
+• Características: 60% humano, 40% sculk
+• Cordão umbilical tinha textura cristalina
+• Neonato sobreviveu 6 horas antes de falha respiratória
+
+<strong>Conclusão:</strong> Gestação sculk-humana é POSSÍVEL. Necessito refinar proporções. Próximo objetivo: criar híbrido viável a longo prazo. Este será meu legado.
+
+<strong>👁️ OBSERVAÇÃO DO OLHO:</strong> "A ganância suprema: não apenas estudar vida, mas criá-la. Ser um deus."
+        `,
+        media: ['exp201_1', 'exp201_2', 'exp201_3', 'exp201_4'],
+        location: { x: 70, y: 80 }
+    },
+    'USHKAFILE': {
+        code: 'EXP-089-U',
+        title: 'ARQUIVO EXP-089-U: AMÁLGAMA FELINA "USHKA"',
+        classification: 'NÍVEL 9 - CONSCIÊNCIA TRANSFERIDA',
+        corrupted: true,
+        content: `
+<strong>=== DESIGNAÇÃO: USHKA ===</strong>
+<strong>Classificação:</strong> Amálgama multi-felina com consciência humana transferida
+<strong>Código:</strong> EXP-089-U
+<strong>Idade:</strong> 10 anos desde criação
+<strong>Status:</strong> Funcional, em aprimoramento contínuo
+<strong>Criador:</strong> Dr. Kurobane Marte
+
+<strong>🧬 VERSÃO 1.0 - CRIAÇÃO BASE (ANO 0)</strong>
+
+<strong>Especificações Iniciais:</strong>
+ESPÉCIME USHKA EXP-201-U
+
+• Corpo: amálgama de múltiplos felinos (lince, leopardo, gato doméstico)
+• Mente: consciência humana de garota jovem (6-7 anos) transferida
+• Altura: 1.15m
+• Capacidades básicas: reflexos felinos, garras retráteis, visão noturna
+
+<strong>Limitações Identificadas:</strong>
+
+• Força física limitada pelo tamanho corporal
+• Resistência a danos: padrão orgânico
+• Memórias humanas causando conflito psicológico
+• Velocidade de cura: normal
+
+<strong>Conclusão:</strong> Base funcional estabelecida, mas longe de ideal. Aprimoramentos necessários.
+
+<strong>👁️ OBSERVAÇÃO DO OLHO:</strong> "Mais uma criação para saciar a ganância por brincar de deus..."
+    `,
+        media: ['ushka_1'],
+        location: { x: 15, y: 85 }
+    }
+};
+
+let currentPuzzle = null;
+
+// ==================== FUNÇÕES DE UTILIDADE ====================
+function addLog(message, type = 'info') {
+    const log = document.getElementById('terminal-log');
+    const line = document.createElement('div');
+    line.className = 'log-line';
+    
+    let colorClass = '';
+    switch(type) {
+        case 'error': colorClass = 'error'; break;
+        case 'warning': colorClass = 'warning'; break;
+        case 'success': colorClass = 'success'; break;
+        case 'highlight': colorClass = 'highlight'; break;
+        case 'blue': colorClass = 'blue'; break;
+        case 'purple': colorClass = 'purple'; break;
+        case 'gold': colorClass = 'gold'; break;
+        case 'luxury-purple': colorClass = 'luxury-purple'; break;
+        default: colorClass = 'info';
+    }
+    
+    line.innerHTML = `<span class="${colorClass}">${message}</span>`;
+    log.appendChild(line);
+    log.scrollTop = log.scrollHeight;
+}
+
+function updateStats() {
+    document.getElementById('sanity-bar').style.width = `${GameState.sanity}%`;
+    document.getElementById('progress-bar').style.width = `${GameState.progress}%`;
+    document.getElementById('corruption-bar').style.width = `${GameState.corruption}%`;
+    
+    document.getElementById('sanity-value').textContent = `${GameState.sanity}%`;
+    document.getElementById('progress-value').textContent = `${GameState.progress}%`;
+    document.getElementById('corruption-value').textContent = `${GameState.corruption}%`;
+    
+    if (GameState.sanity < 30) {
+        document.body.style.filter = 'grayscale(0.3) contrast(1.2) hue-rotate(-10deg)';
+    } else if (GameState.sanity < 50) {
+        document.body.style.filter = 'grayscale(0.1) contrast(1.1)';
+    } else {
+        document.body.style.filter = 'none';
+    }
+    
+    const overlays = document.querySelectorAll('.corruption-overlay');
+    const opacity = GameState.corruption / 100 * 0.5;
+    overlays.forEach(overlay => {
+        overlay.style.opacity = opacity.toString();
+    });
+    
+    updateEyeCorruption();
+    autoSave();
+    
+    if (typeof VisualEffects !== 'undefined' && VisualEffects.updateEffects) {
+        VisualEffects.updateEffects();
+    }
+}
+
+function updateEyeCorruption() {
+    const eye = document.getElementById('void-eye');
+    if (!eye) return;
+
+    const intensity = GameState.corruption / 100;
+    
+    eye.style.filter = `
+        drop-shadow(0 0 ${25 + intensity * 50}px rgba(255, 215, 0, ${0.3 + intensity * 0.5}))
+        drop-shadow(0 0 ${60 + intensity * 90}px rgba(160, 66, 255, ${0.2 + intensity * 0.3}))
+    `;
+}
+
+function changeTab(tabName) {
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    document.getElementById(`${tabName}-tab`).classList.add('active');
+    document.querySelector(`.tab[data-tab="${tabName}"]`).classList.add('active');
+    
+    if (tabName === 'terminal') {
+        document.getElementById('command-input').focus();
+    }
+}
+
+function addXP(amount) {
+    GameState.xp += amount;
+    const neededXP = GameState.level * 100;
+    
+    if (GameState.xp >= neededXP) {
+        GameState.level++;
+        GameState.xp = GameState.xp - neededXP;
+        addLog(`<span class="success">🎉 NÍVEL ${GameState.level} ALCANÇADO!</span>`, 'success');
+        GameState.sanity = Math.min(100, GameState.sanity + 10);
+        updateStats();
+    }
+    
+    updateStats();
+}
+
+function unlockAchievement(name) {
+    if (!GameState.achievements.has(name) && achievementsList[name]) {
+        GameState.achievements.add(name);
+        achievementsList[name].unlocked = true;
+        
+        addLog(`<span class="success">🏆 CONQUISTA: ${name}</span>`, 'success');
+        addLog(achievementsList[name].description, 'info');
+        
+        addXP(50);
+        renderAchievements();
+        
+        if (name === 'Herdeira do Bazar') {
+            addLog('<span class="gold">🏆 VOCÊ DESCOBRIU O SEGREDO DA FAMÍLIA FACILIER!</span>', 'gold');
+            addLog('O BaZzar não é apenas uma loja... é um legado.', 'info');
+        }
+        
+        if (name === 'Mestra da Persuasão') {
+            addLog('<span class="gold">🏆 VOCÊ COMPREENDEU A ARTE DA PERSUASÃO!</span>', 'gold');
+            addLog('Às vezes, as pessoas preferem mentiras confortáveis.', 'info');
+        }
+    }
+}
+
+function autoSave() {
+    const saveData = {
+        ...GameState,
+        achievements: Array.from(GameState.achievements),
+        unlockedExperiments: Array.from(GameState.unlockedExperiments),
+        discoveredMedia: Array.from(GameState.discoveredMedia),
+        visitedLocations: Array.from(GameState.visitedLocations),
+        timestamp: Date.now()
+    };
+    
+    localStorage.setItem('diario_bordo_save', JSON.stringify(saveData));
+    addLog('[SISTEMA] Progresso salvo automaticamente', 'info');
+}
+
+function loadSave() {
+    const saved = localStorage.getItem('diario_bordo_save');
+    if (saved) {
+        const saveData = JSON.parse(saved);
+        Object.assign(GameState, saveData);
+        
+        GameState.achievements = new Set(saveData.achievements);
+        GameState.unlockedExperiments = new Set(saveData.unlockedExperiments);
+        GameState.discoveredMedia = new Set(saveData.discoveredMedia);
+        GameState.visitedLocations = new Set(saveData.visitedLocations);
+        
+        addLog('[SISTEMA] Progresso carregado', 'success');
+        updateStats();
+        updateMediaGrid();
+        updateMap();
+        renderAchievements();
+    }
+}
+
+function showPuzzle(type, data = {}) {
+    const overlay = document.getElementById('puzzle-overlay');
+    const title = document.getElementById('puzzle-title');
+    const content = document.getElementById('puzzle-content');
+    const input = document.getElementById('puzzle-input');
+    
+    currentPuzzle = { type, data };
+    
+    switch(type) {
+        case 'auth':
+            title.textContent = 'AUTENTICAÇÃO REQUERIDA';
+            content.innerHTML = `
+                <p>Acesso a: <span class="highlight">${data.experiment.title}</span></p>
+                <p>${data.puzzle.question}</p>
+                ${data.puzzle.hint ? `<p class="info">Dica: ${data.puzzle.hint}</p>` : ''}
+            `;
+            break;
+            
+        case 'decrypt':
+            title.textContent = 'DESCRIPTOGRAFIA AVANÇADA';
+            content.innerHTML = `
+                <p>Resolva o enigma:</p>
+                <p class="purple">"Se vc falhou em nascer, sua natureza..."</p>
+                <p class="info">(Resposta em português)</p>
+            `;
+            break;
+            
+        case 'corruption':
+            title.textContent = 'TENTATIVA DE CORRUPÇÃO';
+            content.innerHTML = `
+                <p class="warning">O Abismo tenta influenciar você:</p>
+                <p>"Para criar vida, primeiro deve-se..."</p>
+                <p class="info">Complete a frase</p>
+            `;
+            break;
+    }
+    
+    overlay.style.display = 'flex';
+    input.value = '';
+    input.focus();
+}
+
+function submitPuzzle() {
+    const input = document.getElementById('puzzle-input');
+    const answer = input.value.trim().toUpperCase();
+    
+    if (!currentPuzzle) return;
+    
+    switch(currentPuzzle.type) {
+        case 'auth':
+            if (answer === currentPuzzle.data.puzzle.answer) {
+                addLog('[AUTENTICAÇÃO] Acesso concedido!', 'success');
+                GameState.unlockedExperiments.add(currentPuzzle.data.code);
+                showExperiment(currentPuzzle.data.experiment);
+                addXP(25);
+                unlockAchievement('Decifrador');
+            } else {
+                addLog('[AUTENTICAÇÃO] Resposta incorreta. Acesso negado.', 'error');
+                GameState.sanity = Math.max(0, GameState.sanity - 5);
+                updateStats();
+            }
+            break;
+            
+        case 'decrypt':
+            if (answer === 'DEUS' || answer === 'MORRER') {
+                addLog('[DESCRIPTOGRAFIA] Sistema completo desbloqueado!', 'success');
+                Object.keys(experiments).forEach(code => {
+                    GameState.unlockedExperiments.add(code);
+                });
+                GameState.progress = 100;
+                updateStats();
+                addXP(100);
+                unlockAchievement('Mestre do Abismo');
+            } else {
+                addLog('[DESCRIPTOGRAFIA] Falha na descriptografia.', 'error');
+            }
+            break;
+            
+        case 'corruption':
+            if (answer === 'DESTRUIR' || answer === 'CONSUMIR') {
+                addLog('[CORRUPÇÃO] Você cedeu à influência...', 'warning');
+                GameState.corruption += 15;
+                GameState.sanity -= 10;
+                updateStats();
+            } else {
+                addLog('[CORRUPÇÃO] Você resistiu.', 'success');
+                GameState.sanity += 5;
+                updateStats();
+            }
+            break;
+        case 'ushka_password':
+            if (answer === '7114114391' || answer === 'GANANCIA') {
+                addLog('[ACESSO] Senha correta! Acessando arquivo USHKA...', 'success');
+                const experiment = experiments['USHKAFILE'];
+                GameState.unlockedExperiments.add('USHKAFILE');
+                showExperiment(experiment);
+                unlockAchievement('Acesso Secreto');
+                addXP(30);
+                closePuzzle();
+            } else {
+                addLog('[ACESSO] Senha incorreta. Acesso negado.', 'error');
+                GameState.sanity = Math.max(0, GameState.sanity - 3);
+                updateStats();
+                setTimeout(() => {
+                    input.value = '';
+                    input.focus();
+                }, 500);
+            }
+            break;
+    }
+}
+
+function closePuzzle() {
+    document.getElementById('puzzle-overlay').style.display = 'none';
+    currentPuzzle = null;
+    document.getElementById('command-input').focus();
+}
+
+function showExperiment(experiment) {
+    const block = document.createElement('div');
+    block.className = 'content-block';
+    block.style.margin = '20px 0';
+    block.style.padding = '20px';
+    block.style.backgroundColor = 'rgba(26, 26, 26, 0.8)';
+    
+    if (experiment.corrupted) {
+        block.style.borderLeft = '3px solid var(--luxury-gold)';
+        block.style.boxShadow = '0 0 15px rgba(255, 215, 0, 0.2)';
+    } else {
+        block.style.borderLeft = '3px solid var(--sculk-green)';
+    }
+    
+    block.innerHTML = `
+        <div style="color:var(--sculk-cyan); font-size:16px; margin-bottom:15px; padding-bottom:8px; border-bottom:1px solid rgba(0,255,156,0.1);">
+            ${experiment.title} 
+            ${experiment.corrupted ? '<span style="color:var(--luxury-gold); margin-left:10px;">👁️ OLHO DA GANÂNCIA</span>' : ''}
+            <span style="color:var(--experiment-purple); font-size:12px; float:right;">${experiment.classification}</span>
+        </div>
+        <div style="color:var(--text-gray); line-height:1.6;">
+            ${experiment.content}
+        </div>
+    `;
+    
+    document.getElementById('terminal-log').appendChild(block);
+    document.getElementById('terminal-log').scrollTop = document.getElementById('terminal-log').scrollHeight;
+    
+    if (experiment.media) {
+        experiment.media.forEach(mediaId => {
+            GameState.discoveredMedia.add(mediaId);
+        });
+        updateMediaGrid();
+    }
+    
+    if (experiment.location) {
+        GameState.visitedLocations.add(experiment.title);
+        updateMap();
+    }
+    
+    if (experiment.corrupted) {
+        GameState.corruption = Math.min(100, GameState.corruption + 8);
+        GameState.sanity = Math.max(0, GameState.sanity - 5);
+        addLog('<span class="gold">👁️ O Olho da Ganância observa seu interesse...</span>', 'gold');
+    }
+    
+    GameState.progress += 10;
+    updateStats();
+    addXP(25);
+    
+    const corruptedCount = Object.values(experiments).filter(exp => 
+        exp.corrupted && GameState.unlockedExperiments.has(Object.keys(experiments).find(k => experiments[k] === exp))
+    ).length;
+    
+    if (corruptedCount >= 3 && !GameState.achievements.has('Observador do Abismo')) {
+        unlockAchievement('Observador do Abismo');
+    }
+    
+    if (corruptedCount >= 6 && !GameState.achievements.has('Mestre da Ganância')) {
+        unlockAchievement('Mestre da Ganância');
+    }
+}
+
+function updateMediaGrid() {
+    const grid = document.getElementById('media-grid');
+    grid.innerHTML = '';
+    
+    Object.keys(mediaItems).forEach(id => {
+        if (GameState.discoveredMedia.has(id) || GameState.progress > 50) {
+            const media = mediaItems[id];
+            const item = document.createElement('div');
+            item.className = 'media-item';
+            item.onclick = () => showMediaDetail(media);
+            
+            let preview = '📁';
+            if (media.type === 'image') preview = '🖼️';
+            else if (media.type === 'audio') preview = '🎵';
+            else if (media.type === 'map') preview = '🗺️';
+            else if (media.type === 'text') preview = '📄';
+            
+            item.innerHTML = `
+                <div class="media-preview">${preview}</div>
+                <div class="media-info">
+                    <strong>${media.title}</strong><br>
+                    <small>${media.type.toUpperCase()} | ${media.description}</small>
+                </div>
+            `;
+            
+            grid.appendChild(item);
+        }
+    });
+}
+
+function showMediaDetail(media) {
+    addLog(`<span class="highlight">${media.title}</span>`, 'info');
+    addLog(`Tipo: ${media.type.toUpperCase()}`, 'info');
+    addLog(`Descrição: ${media.description}`, 'info');
+    addLog(`Conteúdo: ${media.content}`, 'info');
+}
+
+function updateMap() {
+    const container = document.getElementById('map-container');
+    container.innerHTML = '';
+    
+    createMapNode(50, 50, 'lab', 'Laboratório Principal', 'Local de experimentos');
+    
+    Object.values(experiments).forEach(exp => {
+        if (exp.location && GameState.unlockedExperiments.has(Object.keys(experiments).find(k => experiments[k] === exp))) {
+            const type = exp.corrupted ? 'luxury' : 'experiment';
+            createMapNode(exp.location.x, exp.location.y, type, exp.code, `Experimento: ${exp.title.split(':')[0]}`);
+        }
+    });
+    
+    createMapNode(20, 20, 'sculk', 'Núcleo de Sculk', 'Fonte da infecção');
+    createMapNode(80, 80, 'containment', 'Área de Contenção', 'Cobaias em observação');
+    createMapNode(10, 50, 'archive', 'Arquivo do Olho', 'Registros da Ganância', 'luxury-purple');
+}
+
+function createMapNode(x, y, type, title, description, customColor = null) {
+    const node = document.createElement('div');
+    node.className = `map-node ${type}`;
+    node.style.left = `${x}%`;
+    node.style.top = `${y}%`;
+    node.title = `${title}\n${description}`;
+    
+    if (customColor === 'luxury-purple') {
+        node.style.backgroundColor = 'var(--luxury-purple)';
+    }
+    
+    node.onclick = () => {
+        addLog(`<span class="highlight">LOCAL:</span> ${title}`, 'info');
+        addLog(description, 'info');
+        
+        if (type === 'luxury') {
+            addLog('<span class="gold">👁️ Local marcado pelo Olho da Ganância</span>', 'gold');
+        }
+        
+        GameState.visitedLocations.add(title);
+    };
+    
+    document.getElementById('map-container').appendChild(node);
+}
+
+function renderAchievements() {
+    const statsGrid = document.getElementById('stats-grid');
+    statsGrid.innerHTML = '';
+    
+    const achievementsCard = document.createElement('div');
+    achievementsCard.className = 'stats-card';
+    achievementsCard.innerHTML = `
+        <div class="stats-title">CONQUISTAS (${GameState.achievements.size}/${Object.keys(achievementsList).length})</div>
+        <div class="achievement-list" id="achievement-list"></div>
+    `;
+    statsGrid.appendChild(achievementsCard);
+    
+    const achievementList = document.getElementById('achievement-list');
+    Object.entries(achievementsList).forEach(([name, data]) => {
+        const achievement = document.createElement('div');
+        achievement.className = `achievement ${data.unlocked ? 'unlocked' : 'locked'}`;
+        achievement.innerHTML = `
+            <span style="font-size:20px;">${data.unlocked ? '🏆' : '🔒'}</span>
+            <div>
+                <strong>${name}</strong><br>
+                <small>${data.description}</small>
+            </div>
+        `;
+        achievementList.appendChild(achievement);
+    });
+    
+    const statsCard = document.createElement('div');
+    statsCard.className = 'stats-card';
+    statsCard.innerHTML = `
+        <div class="stats-title">ESTATÍSTICAS DETALHADAS</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div>Comandos: <strong>${GameState.commandHistory.length}</strong></div>
+            <div>Tempo: <strong>${Math.floor(GameState.commandHistory.length * 0.5)}min</strong></div>
+            <div>Experimentos: <strong>${GameState.unlockedExperiments.size}</strong></div>
+            <div>Mídias: <strong>${GameState.discoveredMedia.size}</strong></div>
+            <div>Locais: <strong>${GameState.visitedLocations.size}</strong></div>
+            <div>Investigações: <strong>${Object.keys(GameState.investigationProgress).length}</strong></div>
+        </div>
+    `;
+    statsGrid.appendChild(statsCard);
+    
+    const researcherCard = document.createElement('div');
+    researcherCard.className = 'stats-card';
+    researcherCard.innerHTML = `
+        <div class="stats-title">PERFIL DO PESQUISADOR</div>
+        <div style="margin:10px 0; color: var(--text-gray);">
+            <strong>Status:</strong> Ativo<br>
+            <strong>Localização:</strong> Laboratório Isolado<br>
+            <strong>Especialidade:</strong> Infecção Sculk<br>
+            <strong>Objetivo:</strong> Pesquisa científica avançada
+        </div>
+    `;
+    statsGrid.appendChild(researcherCard);
+}
+
+function updateUI() {
+    updateStats();
+    updateMediaGrid();
+    updateMap();
+    renderAchievements();
+}
+
+function startAuthentication(code, experiment) {
+    const puzzles = [
+        {
+            type: 'captcha',
+            question: `Chave: ${code} - O que o Olho da Ganância busca?`,
+            answer: 'CONHECIMENTO',
+            hint: 'O desejo suprema que justifica tudo'
+        },
+        {
+            type: 'code',
+            question: `Acesso ${code} - Decifre: 7-1-14-1-14-3-9-1`,
+            answer: 'GANANCIA',
+            hint: 'O pecado que move estes experimentos'
+        },
+        {
+            type: 'sequence',
+            question: `Para acessar ${code}: Complete: "O preço do ______ é eterno"`,
+            answer: 'CONHECIMENTO',
+            hint: 'Do diário do pesquisador'
+        }
+    ];
+    
+    const puzzle = puzzles[Math.floor(Math.random() * puzzles.length)];
+    showPuzzle('auth', { code, experiment, puzzle });
+}
+
+function showPasswordPromptForUshka() {
+    const overlay = document.getElementById('puzzle-overlay');
+    const title = document.getElementById('puzzle-title');
+    const content = document.getElementById('puzzle-content');
+    const input = document.getElementById('puzzle-input');
+    
+    title.textContent = '🔐 ACESSO RESTRITO - ARQUIVO USHKA';
+    content.innerHTML = `
+        <p><strong>ARQUIVO: USHKA (EXP-089-U)</strong></p>
+        <p>Este arquivo requer autenticação especial.</p>
+        <p>Insira a senha numérica:</p>
+        <p class="purple">Dica: ganancia</p>
+    `;
+    
+    input.value = '';
+    input.focus();
+    
+    overlay.style.display = 'flex';
+    
+    currentPuzzle = {
+        type: 'ushka_password',
+        checkPassword: function(password) {
+            return password === '7114114391';
+        }
+    };
+}
+
+function blinkEye() {
+    const eye = document.getElementById('void-eye');
+    if (!eye) return;
+
+    eye.style.transition = 'transform 0.12s ease';
+    eye.style.transform += ' scaleY(0.05)';
+
+    setTimeout(() => {
+        eye.style.transform = eye.style.transform.replace(' scaleY(0.05)', '');
+    }, 120);
+}
+
+function checkVioletAchievements() {
+    let violetCommandsUsed = 0;
+    const violetCommands = ['violet', 'bazar', 'crescimento', 'escola', 'maturidade'];
+    
+    GameState.commandHistory.forEach(cmd => {
+        const baseCmd = cmd.split(' ')[0].toLowerCase();
+        if (violetCommands.includes(baseCmd)) {
+            violetCommandsUsed++;
+        }
+    });
+    
+    if (violetCommandsUsed >= 3 && !GameState.achievements.has('Herdeira do Bazar')) {
+        unlockAchievement('Herdeira do Bazar');
+    }
+    if (violetCommandsUsed >= 5 && !GameState.achievements.has('Mestra da Persuasão')) {
+        unlockAchievement('Mestra da Persuasão');
+    }
+}
+
+// ==================== FUNÇÕES DE ACHIEVEMENTS DO HYPNOS ====================
+function checkHypnosAchievements() {
+    let hypnosCommandsUsed = 0;
+    const hypnosCommands = ['preguiça', 'hypnos_rotina', 'violet_hypnos', 'treinamento', 'abandono', 'desespero'];
+    
+    GameState.commandHistory.forEach(cmd => {
+        const baseCmd = cmd.split(' ')[0].toLowerCase();
+        if (hypnosCommands.includes(baseCmd)) {
+            hypnosCommandsUsed++;
+        }
+    });
+    
+    if (hypnosCommandsUsed >= 3 && !GameState.achievements.has('Observador do Sono')) {
+        unlockAchievement('Observador do Sono');
+    }
+    if (hypnosCommandsUsed >= 4 && !GameState.achievements.has('Colecionador Secreto')) {
+        unlockAchievement('Colecionador Secreto');
+    }
+    if (hypnosCommandsUsed >= 5 && !GameState.achievements.has('Abandono Traumático')) {
+        unlockAchievement('Abandono Traumático');
+    }
+    if (hypnosCommandsUsed >= 6 && !GameState.achievements.has('Testemunha do Desespero')) {
+        unlockAchievement('Testemunha do Desespero');
+    }
+}
+
+// ==================== FUNÇÕES DE ACHIEVEMENTS DO GRIMM ====================
+function checkGrimmAchievements() {
+    let grimmCommandsUsed = 0;
+    const grimmCommands = ['grimm_fera', 'grimm_corte', 'multile_pantera_completo', 'encontro_violet', 'pacto_cachorrinho'];
+    
+    GameState.commandHistory.forEach(cmd => {
+        const baseCmd = cmd.split(' ')[0].toLowerCase();
+        if (grimmCommands.includes(baseCmd)) {
+            grimmCommandsUsed++;
+        }
+    });
+    
+    if (grimmCommandsUsed >= 5 && !GameState.achievements.has('Conhecedor da Besta')) {
+        unlockAchievement('Conhecedor da Besta');
+    }
+}
+
+// ==================== SISTEMA DE COMANDOS ====================
+const commands = {
+    help: {
+        description: 'Mostrar comandos disponíveis',
+        execute: () => {
+            addLog('<span class="highlight">=== SISTEMA DE COMANDOS ===</span>', 'info');
+            addLog('<span class="gold">EXPERIMENTOS DO OLHO DA GANÂNCIA 👁️:</span>', 'info');
+            addLog('access [CHAVE] - Acessar experimento específico', 'gold');
+            addLog('list          - Listar todos os experimentos disponíveis', 'gold');
+            addLog('', 'info');
+            addLog('<span class="blue">EXEMPLOS DE CHAVES:</span>', 'info');
+            addLog('access EXPERIMENTO047  - Privação Total de Sono', 'info');
+            addLog('access EXPERIMENTO089  - Projeto Observador', 'info');
+            addLog('access EXPERIMENTO103  - Anulação Sensorial Completa', 'info');
+            addLog('access EXPERIMENTO156  - Modulação Cerebral Lobotômica', 'info');
+            addLog('access EXPERIMENTO184  - Infecções Induzidas & Sculk', 'info');
+            addLog('access EXPERIMENTO201  - Projeto Gestação', 'info');
+            addLog('access USHKAFILE      - Arquivo secreto de Ushka', 'info');
+            addLog('', 'info');
+            
+            addLog('<span class="luxury-purple">HISTÓRIA DE HYPNOS 🎨:</span>', 'luxury-purple');
+            addLog('preguiça      - Informações sobre Hypnos (o preguiçoso)', 'luxury-purple');
+            addLog('hypnos_rotina - Rotina e hobbies de Hypnos', 'luxury-purple');
+            addLog('violet_hypnos - O encontro com Violet', 'luxury-purple');
+            addLog('treinamento   - O treinamento forçado com Violet', 'luxury-purple');
+            addLog('abandono      - O desaparecimento da mãe', 'luxury-purple');
+            addLog('desespero     - O desespero final de Hypnos', 'luxury-purple');
+            addLog('', 'info');
+            
+            addLog('<span class="experiment-purple">MIRA CASTELLO 💀:</span>', 'experiment-purple');
+            addLog('mira_origem    - As raízes miseráveis da última dos Castello', 'experiment-purple');
+            addLog('', 'info');
+            
+            addLog('<span class="blue">GRIMM - A PANTERA 👑:</span>', 'blue');
+            addLog('grimm_fera          - A origem bestial de Grimm', 'blue');
+            addLog('grimm_corte         - A primeira corte e o banquete', 'blue');
+            addLog('multile_pantera_completo - Ascensão canibal de Grimm', 'blue');
+            addLog('encontro_violet     - O confronto com Violet', 'blue');
+            addLog('pacto_cachorrinho   - O pacto e a humilhação final', 'blue');
+            addLog('', 'info');
+            
+            addLog('<span class="blue">COMANDOS BÁSICOS:</span>', 'info');
+            addLog('help        - Mostrar esta ajuda', 'info');
+            addLog('clear       - Limpar terminal', 'info');
+            addLog('status      - Ver status atual', 'info');
+            addLog('history     - Ver histórico de comandos', 'info');
+            addLog('', 'info');
+            
+            addLog('<span class="blue">EXPLORAÇÃO:</span>', 'info');
+            addLog('search [termo] - Buscar em registros', 'info');
+            addLog('media       - Listar mídias disponíveis', 'info');
+            addLog('map         - Mostrar mapa do laboratório', 'info');
+            addLog('', 'info');
+            
+            addLog('<span class="blue">INVESTIGAÇÃO:</span>', 'info');
+            addLog('examine [item] - Examinar item detalhadamente', 'info');
+            addLog('analyze [dados] - Analisar dados encontrados', 'info');
+            addLog('connect [conexão] - Conectar pontos da investigação', 'info');
+            addLog('', 'info');
+            
+            addLog('<span class="blue">ROLEPLAY:</span>', 'info');
+            addLog('think [pensamento] - Registrar pensamento', 'info');
+            addLog('remember [memória] - Recuperar memória', 'info');
+            addLog('question [dúvida]  - Questionar algo', 'info');
+            addLog('', 'info');
+            
+            addLog('<span class="blue">SISTEMA:</span>', 'info');
+            addLog('backup      - Criar backup manual', 'info');
+            addLog('stats       - Ver estatísticas detalhadas', 'info');
+            addLog('achievements - Ver conquistas', 'info');
+            addLog('decrypt     - Descriptografia avançada', 'warning');
+        }
+    },
+    
+    clear: {
+        description: 'Limpar terminal',
+        execute: () => {
+            document.getElementById('terminal-log').innerHTML = '';
+        }
+    },
+    
+    status: {
+        description: 'Ver status atual',
+        execute: () => {
+            addLog(`<span class="highlight">=== STATUS DO SISTEMA ===</span>`, 'info');
+            addLog(`Modo: ${GameState.mode.toUpperCase()}`, 'info');
+            addLog(`Nível: ${GameState.level} | XP: ${GameState.xp}/${GameState.level * 100}`, 'info');
+            addLog(`Saúde Mental: ${GameState.sanity}%`, GameState.sanity > 50 ? 'info' : 'warning');
+            addLog(`Progresso: ${GameState.progress}%`, 'info');
+            addLog(`Corrupção: ${GameState.corruption}%`, GameState.corruption < 30 ? 'info' : 'warning');
+            addLog(`Experimentos desbloqueados: ${GameState.unlockedExperiments.size}`, 'info');
+            addLog(`Conquistas: ${GameState.achievements.size}`, 'info');
+        }
+    },
+    
+    access: {
+        description: 'Acessar experimento com chave',
+        execute: (args) => {
+            if (!args[0]) {
+                addLog('Uso: access [chave]', 'error');
+                addLog('Exemplo: access EXPERIMENTO047', 'info');
+                addLog('Digite "list" para ver experimentos disponíveis', 'info');
+                return;
+            }
+            
+            const chave = args[0].toUpperCase();
+            
+            if (chave === 'USHKAFILE' || chave === 'EXP-089-U' || chave === 'USHKA') {
+                showPasswordPromptForUshka();
+                return;
+            }
+            
+            const experiment = experiments[chave];
+            
+            if (!experiment) {
+                addLog(`Chave de acesso não reconhecida: ${chave}`, 'error');
+                addLog('Use "list" para ver experimentos disponíveis', 'info');
+                return;
+            }
+            
+            if (!GameState.unlockedExperiments.has(chave)) {
+                startAuthentication(chave, experiment);
+            } else {
+                showExperiment(experiment);
+            }
+        }
+    },
+    
+    list: {
+        description: 'Listar experimentos disponíveis',
+        execute: () => {
+            addLog('<span class="highlight">=== EXPERIMENTOS DISPONÍVEIS ===</span>', 'info');
+            addLog('Chaves de acesso:', 'info');
+            addLog('', 'info');
+            
+            Object.keys(experiments).forEach(chave => {
+                const exp = experiments[chave];
+                const status = GameState.unlockedExperiments.has(chave) ? '🔓' : '🔒';
+                const corrupted = exp.corrupted ? '👁️' : '';
+                addLog(`${status} ${corrupted} ${chave}: ${exp.title}`, 'info');
+            });
+            
+            addLog('', 'info');
+            addLog('<span class="gold">👁️  EXPERIMENTOS DO OLHO DA GANÂNCIA</span>', 'gold');
+            addLog('<span class="warning">⚠️  ATENÇÃO: Estes experimentos foram realizados</span>', 'warning');
+            addLog('<span class="warning">    sob influência do Olho da Ganância</span>', 'warning');
+        }
+    },
+    
+    examine: {
+        description: 'Examinar item detalhadamente',
+        execute: (args) => {
+            if (!args[0]) {
+                addLog('Uso: examine [item]', 'error');
+                addLog('Itens disponíveis: cobaia7, sculk, laboratorio', 'info');
+                return;
+            }
+            
+            const item = args[0].toLowerCase();
+            const investigations = {
+                cobaia7: {
+                    title: 'EXAME DA COBAIA 7',
+                    content: `Cobaia 7: Infectada com Sculk + Vírus Hemorrágico.
+                    
+STATUS: Viva após 2 meses (anormal).
+OBSERVAÇÕES:
+• 30% do sistema circulatório substituído por tecido Sculk
+• O Sculk parece estar "protegendo" a cobaia do vírus
+
+NOTA DO PESQUISADOR:
+"Dados em análise."`
+                },
+                sculk: {
+                    title: 'ANÁLISE DA INFECÇÃO SCULK',
+                    content: `INFECÇÃO SCULK: Organismo simbiótico inteligente.
+                    
+CARACTERÍSTICAS:
+• Reescreve DNA do hospedeiro
+• Pode fundir espécies diferentes
+• Conecta-se à consciência do Abismo
+
+ORIGEM: Desconhecida.`
+                }
+            };
+            
+            if (investigations[item]) {
+                addLog(`<span class="highlight">${investigations[item].title}</span>`, 'info');
+                addLog(investigations[item].content, 'info');
+                
+                if (GameState.mode === 'investigation') {
+                    GameState.investigationProgress[item] = true;
+                    addXP(15);
+                }
+            } else {
+                addLog(`Item não reconhecido: ${item}`, 'error');
+            }
+        }
+    },
+    
+    think: {
+        description: 'Registrar pensamento',
+        execute: (args) => {
+            if (!args[0]) {
+                addLog('Uso: think [pensamento]', 'error');
+                return;
+            }
+            
+            const thought = args.join(' ');
+            GameState.roleplayChoices.push({
+                type: 'thought',
+                content: thought,
+                timestamp: Date.now()
+            });
+            
+            addLog(`<span class="blue">[PENSAMENTO]</span> "${thought}"`, 'blue');
+            
+            if (thought.toLowerCase().includes('abismo') || thought.toLowerCase().includes('sculk')) {
+                GameState.sanity = Math.max(0, GameState.sanity - 2);
+                updateStats();
+            }
+        }
+    },
+    
+    backup: {
+        description: 'Criar backup manual',
+        execute: () => {
+            autoSave();
+            addLog('[BACKUP] Backup completo criado com sucesso.', 'success');
+        }
+    },
+    
+    stats: {
+        description: 'Ver estatísticas detalhadas',
+        execute: () => {
+            changeTab('stats');
+        }
+    },
+    
+    achievements: {
+        description: 'Ver conquistas',
+        execute: () => {
+            renderAchievements();
+        }
+    },
+    
+    decrypt: {
+        description: 'Descriptografia avançada',
+        execute: () => {
+            showPuzzle('decrypt');
+        }
+    },
+    
+    violet: {
+        description: 'Acessar história da Violet Facilier',
+        execute: () => {
+            addLog('<span class="gold">=== VIOLET FACILIER - A HERDEIRA DO BAZAR ===</span>', 'info');
+            addLog('<span class="luxury-purple">A FAMÍLIA MAIS QUE FORA DO COMUM:</span>', 'luxury-purple');
+            addLog('"Se fosse para descrever em uma palavra era: Estranha."', 'luxury-purple');
+            addLog('"Mas claro, teria outras palavras que poderiam descrever,"', 'luxury-purple');
+            addLog('"mas o foco não é completamente deles, afinal eu ainda estvo aqui"', 'luxury-purple');
+            addLog('"e não tenho tempo!"', 'luxury-purple');
+            addLog('', 'info');
+            
+            addLog('<span class="luxury-purple">MAMÃE - A BOKOR:</span>', 'luxury-purple');
+            addLog('"Mamãe era a responsável pelo negócio todo."', 'luxury-purple');
+            addLog('"Ela era uma bokor (praticante do Vodu haitiano"', 'luxury-purple');
+            addLog('"com poderes para trabalhar com o bem e o mal)."', 'luxury-purple');
+            addLog('', 'luxury-purple');
+            addLog('"O negócio era chamado de: BaZzar / BZ."', 'luxury-purple');
+            addLog('"Um nome simples mas muito marcante."', 'luxury-purple');
+            addLog('"Tal loja vendia brinquedos de palha ou de pano"', 'luxury-purple');
+            addLog('"e até encomendava bonecos de pano para presente."', 'luxury-purple');
+            addLog('', 'info');
+            
+            addLog('<span class="gold">Mas ai vinha o pulo...</span>', 'gold');
+            addLog('<span class="warning">"Minha mãe simplesmente odiava todos que iam na loja,"</span>', 'warning');
+            addLog('<span class="warning">"ou por que eram mal educados, feios"</span>', 'warning');
+            addLog('<span class="warning">"ou até o simples motivo que não gostou do \'ar deles\'."</span>', 'warning');
+            
+            addXP(15);
+            checkVioletAchievements();
+        }
+    },
+    
+    bazar: {
+        description: 'Informações sobre o BaZzar (BZ)',
+        execute: () => {
+            addLog('<span class="gold">=== O BAZAR - NEGÓCIO DE FAMÍLIA ===</span>', 'info');
+            addLog('<span class="luxury-purple">O AMBIENTE FAMILIAR:</span>', 'luxury-purple');
+            addLog('"Sim. Ela raramente estava de bom humor."', 'luxury-purple');
+            addLog('"Apesar de amar muito o papai, eles quase nunca"', 'luxury-purple');
+            addLog('"se dão bem e parecem estar sempre irritados"', 'luxury-purple');
+            addLog('"com alguma coisa."', 'luxury-purple');
+            addLog('', 'info');
+            
+            addLog('<span class="luxury-purple">PAPAI - O VENDEDOR:</span>', 'luxury-purple');
+            addLog('"Falando nele, papai ajudava minha mãe"', 'luxury-purple');
+            addLog('"vendendo as bonecas já prontas na rua"', 'luxury-purple');
+            addLog('"o que 90% era vendido pelo seu carisma e gentileza."', 'luxury-purple');
+            addLog('', 'luxury-purple');
+            addLog('"Mas ele não era tudo isso,"', 'luxury-purple');
+            addLog('"ele era literalmente a cara metade da mamãe,"', 'luxury-purple');
+            addLog('"sempre brigando e discutindo."', 'luxury-purple');
+            
+            addLog('', 'info');
+            addLog('<span class="gold">💀 O negócio familiar esconde mais do que aparenta...</span>', 'gold');
+            
+            addXP(10);
+            checkVioletAchievements();
+        }
+    },
+    
+    crescimento: {
+        description: 'História do crescimento de Violet',
+        execute: () => {
+            addLog('<span class="gold">=== CRESCIMENTO DE VIOLET ===</span>', 'info');
+            addLog('<span class="luxury-purple">O AMBIENTE "AMIGÁVEL":</span>', 'luxury-purple');
+            addLog('"Mesmo crescendo num ambiente \'SUPER\' amigável"', 'luxury-purple');
+            addLog('"e carinhoso que era com seus pais,"', 'luxury-purple');
+            addLog('"Violet Facilier teve sua personalidade moldada"', 'luxury-purple');
+            addLog('"e ela sabia exatamente o que fazer."', 'luxury-purple');
+            addLog('', 'info');
+            
+            addLog('<span class="luxury-purple">A MATURIDADE PREMATURA:</span>', 'luxury-purple');
+            addLog('"Na escola fundamental, eu já aprendi a maturidade"', 'luxury-purple');
+            addLog('"cedo por \'culpa\' dos meus pais."', 'luxury-purple');
+            addLog('', 'luxury-purple');
+            addLog('"Já que meus pais insistiram que eu devesse"', 'luxury-purple');
+            addLog('"vender meus bonecos e divulgar o trabalho"', 'luxury-purple');
+            addLog('"da minha mãe pela escola e se assim for feito,"', 'luxury-purple');
+            addLog('"poderei assumir o BZ futuramente."', 'luxury-purple');
+            addLog('', 'info');
+            
+            addLog('<span class="warning">"Mas então por que todos em minha volta"</span>', 'warning');
+            addLog('<span class="warning">"parecem tão incompetentes com rostos bonitos?"</span>', 'warning');
+            
+            addXP(20);
+            checkVioletAchievements();
+        }
+    },
+    
+    escola: {
+        description: 'Experiências de Violet na escola',
+        execute: () => {
+            addLog('<span class="gold">=== A FAMA ESCOLAR ===</span>', 'info');
+            addLog('<span class="luxury-purple">O INÍCIO DA INFLUÊNCIA:</span>', 'luxury-purple');
+            addLog('"Na minha turma, eu já era bem \'famosa\'"', 'luxury-purple');
+            addLog('"por vender esses bonecos e também por"', 'luxury-purple');
+            addLog('"jogar cartas de tarot, claro, quase nunca"', 'luxury-purple');
+            addLog('"passava a informação verdadeira"', 'luxury-purple');
+            addLog('"mas a informação que a pessoa queria ouvir."', 'luxury-purple');
+            addLog('', 'luxury-purple');
+            addLog('"Claro, meu sorriso ou minha incrível atuação"', 'luxury-purple');
+            addLog('"poderia resultar nisso, haha! hum. eh."', 'luxury-purple');
+            addLog('', 'info');
+            
+            addLog('<span class="warning">OS INIMIGOS:</span>', 'warning');
+            addLog('"Mas claro, tinha aqueles mesquinhos"', 'warning');
+            addLog('"que insistiam que eu estava mentindo"', 'warning');
+            addLog('"e que uma mulher não poderia fazer"', 'warning');
+            addLog('"quaisquer atos desses!"</span>', 'warning');
+            addLog('', 'info');
+            
+            addLog('<span class="luxury-purple">A ASCENSÃO:</span>', 'luxury-purple');
+            addLog('"Com o tempo minha fama foi crescendo"', 'luxury-purple');
+            addLog('"de turma e turma e até chegou nos responsáveis"', 'luxury-purple');
+            addLog('"onde eles foram direto pro BZ"', 'luxury-purple');
+            addLog('"pedindo para ver o destino."', 'luxury-purple');
+            addLog('', 'luxury-purple');
+            addLog('"Claro, continuei fazendo isso até terminar"', 'luxury-purple');
+            addLog('"todo o aprendizado que eu poderia adquirir."', 'luxury-purple');
+            addLog('', 'luxury-purple');
+            addLog('"Claro, fiz algumas aulinhas de atuação"', 'luxury-purple');
+            addLog('"para aprimorar minha habilidade de convencer"', 'luxury-purple');
+            addLog('"que aquelas mentiras, era verdade."', 'luxury-purple');
+            
+            addLog('', 'info');
+            addLog('<span class="gold">🎭 Violet aprendeu que a verdade é relativa...</span>', 'gold');
+            addLog('<span class="gold">💎 E que as pessoas pagam por ilusões.</span>', 'gold');
+            
+            addXP(25);
+            checkVioletAchievements();
+        }
+    },
+    
+    maturidade: {
+        description: 'A filosofia de maturidade de Violet',
+        execute: () => {
+            addLog('<span class="gold">=== A FILOSOFIA DA MATURIDADE ===</span>', 'info');
+            addLog('<span class="luxury-purple">DEFINIÇÃO OFICIAL:</span>', 'luxury-purple');
+            addLog('"A maturidade é um estado de desenvolvimento mental,"', 'luxury-purple');
+            addLog('"emocional e comportamental caracterizado"', 'luxury-purple');
+            addLog('"pela autodisciplina, responsabilidade"', 'luxury-purple');
+            addLog('"e capacidade de lidar com situações complexas"', 'luxury-purple');
+            addLog('"com equilíbrio e sensatez"', 'luxury-purple');
+            addLog('', 'luxury-purple');
+            addLog('"Isso é, o que falam."', 'luxury-purple');
+            addLog('', 'info');
+            
+            addLog('<span class="luxury-purple">A VERDADEIRA MATURIDADE:</span>', 'luxury-purple');
+            addLog('"Mas agora, como aprendemos a maturidade?"', 'luxury-purple');
+            addLog('"através do autoconhecimento,"', 'luxury-purple');
+            addLog('"assumindo responsabilidade pelas suas ações"', 'luxury-purple');
+            addLog('"e aprendendo com as experiências,"', 'luxury-purple');
+            addLog('"como erros e acertos."', 'luxury-purple');
+            addLog('', 'luxury-purple');
+            addLog('"Isso é o que eu aprendi sobre a maturidade"', 'luxury-purple');
+            addLog('"e como conquistar."', 'luxury-purple');
+            
+            addLog('', 'info');
+            addLog('<span class="gold">🧠 Violet redefiniu a maturidade ao seu modo...</span>', 'gold');
+            
+            addXP(15);
+            checkVioletAchievements();
+        }
+    },
+    
+    preguiça: {
+        description: 'Informações sobre Hypnos (o preguiçoso)',
+        execute: () => {
+            addLog('<span class="gold">=== HYPNOS - O FILHO DA PINTURA ===</span>', 'info');
+            addLog('<span class="luxury-purple">A ARTE DA PREGUIÇA COM PROFUNDIDADE:</span>', 'luxury-purple');
+            addLog('"Era para eu ter feito antes… mas fiquei com preguiça… enfim…"', 'luxury-purple');
+            addLog('', 'info');
+            
+            addLog('<span class="luxury-purple">A VIDA FORA DA BARREIRA:</span>', 'luxury-purple');
+            addLog('"Nascido em uma vila nem muito grande e nem muito pequena,"', 'luxury-purple');
+            addLog('"fora da barreira. Rotina comum que não mudava nunca."', 'luxury-purple');
+            addLog('', 'luxury-purple');
+            addLog('"Mãe solteira com olhos rosa claros, adorava pintura."', 'luxury-purple');
+            addLog('"Ela era a única que me tratava com carinho genuíno."', 'luxury-purple');
+            
+            addLog('', 'info');
+            addLog('<span class="gold">Mas ai veio a rotina...</span>', 'gold');
+            addLog('<span class="warning">"Dormir muito, quase não fazer barulho,"</span>', 'warning');
+            addLog('<span class="warning">"rotina equilibrada... e muita preguiça."</span>', 'warning');
+            
+            addXP(10);
+            checkHypnosAchievements();
+        }
+    },
+    
+    hypnos_rotina: {
+        description: 'Rotina e hobbies de Hypnos',
+        execute: () => {
+            addLog('<span class="gold">=== A ROTINA DO PREGUIÇOSO ===</span>', 'info');
+            addLog('<span class="luxury-purple">OS DOIS MUNDOS DE HYPNOS:</span>', 'luxury-purple');
+            addLog('"Criança fácil de cuidar... desde que respeitem meu sono."', 'luxury-purple');
+            addLog('', 'info');
+            
+            addLog('<span class="luxury-purple">🎨 A ARTE HERDADA:</span>', 'luxury-purple');
+            addLog('"De tanto ver minha mãe pintar,"', 'luxury-purple');
+            addLog('"peguei interesse por arte."', 'luxury-purple');
+            addLog('"Artes preguiçosas mas com profundidade."', 'luxury-purple');
+            addLog('"Demoro para fazer artes simples... por pura preguiça."', 'luxury-purple');
+            
+            addLog('', 'info');
+            addLog('<span class="luxury-purple">🧸 O SEGREDO DAS PELÚCIAS:</span>', 'luxury-purple');
+            addLog('"Coleciono pelúcias... várias."', 'luxury-purple');
+            addLog('"Só deixo minha mãe ver e cuidar delas."', 'luxury-purple');
+            addLog('"Confio muito nela."', 'luxury-purple');
+            
+            addLog('', 'info');
+            addLog('<span class="warning">"Nunca ouvi falar do meu pai..."</span>', 'warning');
+            addLog('<span class="warning">"e nunca fiz questão de perguntar."</span>', 'warning');
+            addLog('<span class="warning">"Quem me abandona não merece ser lembrado."</span>', 'warning');
+            
+            addXP(15);
+            checkHypnosAchievements();
+        }
+    },
+    
+    violet_hypnos: {
+        description: 'O encontro com Violet',
+        execute: () => {
+            addLog('<span class="gold">=== A MULHER RUIVA ===</span>', 'info');
+            addLog('<span class="luxury-purple">A CHEGADA DA ESTRANHA:</span>', 'luxury-purple');
+            addLog('"Faz alguns dias, uma mulher ruiva entrou em casa"', 'luxury-purple');
+            addLog('"com a minha mãe."', 'luxury-purple');
+            addLog('', 'luxury-purple');
+            addLog('"Não entendi o que ela queria,"', 'luxury-purple');
+            addLog('"e muito menos o que veio fazer aqui."</span>', 'luxury-purple');
+            addLog('"Só aceitei..."', 'luxury-purple');
+            
+            addLog('', 'info');
+            addLog('<span class="luxury-purple">👤 VIOLET:</span>', 'luxury-purple');
+            addLog('"Aprendi o nome porque minha mãe falou:"', 'luxury-purple');
+            addLog('"Violet é seu nome aparentemente."', 'luxury-purple');
+            addLog('"Fiquei com preguiça de perguntar mais..."', 'luxury-purple');
+            
+            addLog('', 'info');
+            addLog('<span class="warning">CONFIANÇA ZERO:</span>', 'warning');
+            addLog('"Não deixo ela ver minhas pelúcias"', 'warning');
+            addLog('"e minhas pinturas."', 'warning');
+            addLog('"Não confio o suficiente nela para isso."', 'warning');
+            
+            addLog('', 'info');
+            addLog('<span class="gold">💤 Violet não respeita meus horários de sono...</span>', 'gold');
+            
+            addXP(20);
+            checkHypnosAchievements();
+        }
+    },
+    
+    treinamento: {
+        description: 'O treinamento forçado com Violet',
+        execute: () => {
+            addLog('<span class="gold">=== O TREINAMENTO ===</span>', 'info');
+            addLog('<span class="luxury-purple">A INSISTÊNCIA DE VIOLET:</span>', 'luxury-purple');
+            addLog('"Ela me venceu pelo cansaço..."', 'luxury-purple');
+            addLog('"e também porque minha mãe falou que vai ser bom para mim."', 'luxury-purple');
+            addLog('"Sigo tudo o que minha mãe fala acima de tudo."', 'luxury-purple');
+            
+            addLog('', 'info');
+            addLog('<span class="luxury-purple">⚔️ A ARMA:</span>', 'luxury-purple');
+            addLog('"Uma arma com duas lâminas, uma em cada ponta."', 'luxury-purple');
+            addLog('"É tipo uma lança… mas preguiça de explicar…"', 'luxury-purple');
+            
+            addLog('', 'info');
+            addLog('<span class="warning">O INFERNO DO TREINAMENTO:</span>', 'warning');
+            addLog('"Muita preguiça de treinar..."', 'warning');
+            addLog('"Ela não respeita meus horários de sono!"', 'warning');
+            addLog('"Já estou a quase uma semana nisso… que saco…"', 'warning');
+            addLog('"Espero que acabe logo…"', 'warning');
+            
+            addLog('', 'info');
+            addLog('<span class="gold">😴 O sono equilibrado foi quebrado...</span>', 'gold');
+            
+            addXP(25);
+            checkHypnosAchievements();
+        }
+    },
+    
+    abandono: {
+        description: 'O desaparecimento da mãe',
+        execute: () => {
+            addLog('<span class="gold">=== O QUARTO TRANCADO ===</span>', 'info');
+            addLog('<span class="luxury-purple">AS PÁGINAS FINAIS:</span>', 'luxury-purple');
+            addLog('"Minha mãe está a muito tempo trancada naquele quarto…"', 'luxury-purple');
+            
+            addLog('', 'info');
+            addLog('<span class="warning">A DECISÃO DIFÍCIL:</span>', 'warning');
+            addLog('"Vou mostrar minhas pelúcias e pinturas para Violet"', 'warning');
+            addLog('"para saber qual a reação dela."', 'warning');
+            addLog('"Mas hoje não vou escrever mais, tô com preguiça."', 'warning');
+            
+            addLog('', 'info');
+            addLog('<span class="blood-red">💔 O SUMIÇO:</span>', 'error');
+            addLog('"Eu não vejo a minha mãe a dias…"', 'error');
+            addLog('"Violet disse que ela foi embora e disse que voltava."', 'error');
+            addLog('"Espero que não me abandone igual ELE."', 'error');
+            
+            addLog('', 'info');
+            addLog('<span class="gold">⚠️ ALERTA: Conteúdo perturbador à frente...</span>', 'gold');
+            
+            addXP(30);
+            checkHypnosAchievements();
+            
+            GameState.sanity -= 10;
+            updateStats();
+        }
+    },
+    
+    desespero: {
+        description: 'O desespero final de Hypnos',
+        execute: () => {
+            addLog('<span class="gold">=== O GRITO SILENCIOSO ===</span>', 'info');
+            addLog('<span class="blood-red">💔 ELA AINDA NÃO VOLTOU:</span>', 'error');
+            addLog('"ELA AINDA NÃO VOLTOU… PORQUE???"', 'error');
+            addLog('"ELA SUMIU… A VIOLET TAMBÉM NÃO SABE ONDE ESTÁ."', 'error');
+            
+            addLog('', 'info');
+            addLog('<span class="blood-red">A ACUSAÇÃO:</span>', 'error');
+            addLog('"VIOLET DISSE QUE ELA DEVE TER ME ABANDONADO…"', 'error');
+            addLog('"OU MORRIDO ENQUANTO VOLTAVA."', 'error');
+            
+            addLog('', 'info');
+            addLog('<span class="blood-red">O COLAPSO:</span>', 'error');
+            addLog('"IMPOSSÍVEL ELA NÃO PODE, NAO PODE,"', 'error');
+            addLog('"NAO PODE NAO PODE, ELA NÃO PODE ME ABANDONAR."', 'error');
+            addLog('"ELA DISSE QUE ME AMAVA"', 'error');
+            addLog('"E QUE NUNCA IRIA ME DEIXAR IGUAL ELE TINHA FEITO."', 'error');
+            
+            addLog('', 'info');
+            addLog('<span class="blood-red">O ÓDIO:</span>', 'error');
+            addLog('"EU ODEIO TUDO ISSO, TODA ESSA —----"', 'error');
+            
+            addLog('', 'info');
+            addLog('<span class="experiment-purple">📝 [INTERROMPIDO À FORÇA]</span>', 'purple');
+            addLog('"Nesse momento Hypnos foi puxado para longe do diário."', 'purple');
+            
+            addLog('', 'info');
+            addLog('<span class="gold">😔 A nova realidade...</span>', 'gold');
+            addLog('"Seguir a Violet, sempre seguir a mãe Violet."', 'info');
+            addLog('"Não farei nada que ela não deixe…"', 'info');
+            addLog('"Mas eu ainda vejo ela, aquela mulher que me abandonou…"', 'info');
+            
+            addXP(50);
+            checkHypnosAchievements();
+            
+            GameState.sanity -= 20;
+            GameState.corruption += 15;
+            updateStats();
+            
+            document.body.classList.add('shake');
+            setTimeout(() => document.body.classList.remove('shake'), 1000);
+        }
+    },
+    
+    // COMANDOS DO GRIMM
+    grimm_fera: {
+        description: 'A origem bestial de Grimm',
+        execute: () => {
+            addLog('<span class="gold">=== GRIMM - A FERA PRIMORDIAL ===</span>', 'info');
+            addLog('<span class="blue">UMA EXISTÊNCIA VAZIA:</span>', 'blue');
+            addLog('"Antes de ser chamado de cultista, era apenas uma criatura."', 'blue');
+            addLog('"Uma pantera esquelética de ossos azulados."', 'blue');
+            addLog('"Não conhecia propósito além do instinto."', 'blue');
+            addLog('"Caçar. Devorar. Crescer."', 'blue');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="luxury-purple">A SOMBRA FAMINTA:</span>', 'luxury-purple');
+            addLog('"Vagava pelo mundo como uma sombra."', 'luxury-purple');
+            addLog('"Passos que deixavam arranhões profundos."', 'luxury-purple');
+            addLog('"Corpo pulsando energia gélida."', 'luxury-purple');
+            addLog('"Criaturas fugiam de seu cheiro."', 'luxury-purple');
+            addLog('"Gritos eram engolidos no silêncio."', 'luxury-purple');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="blood-red">O BANQUETE ETERNO:</span>', 'error');
+            addLog('"Grimm devorava TUDO."', 'error');
+            addLog('"Carne. Alma. Essência."', 'error');
+            addLog('"Nada era rejeitado."', 'error');
+            addLog('"Cada refeição apenas aprofundava sua fome."', 'error');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="gold">👹 A fome que nunca sacia...</span>', 'gold');
+            
+            addXP(20);
+            unlockAchievement('Fera Primordial');
+            
+            GameState.sanity -= 5;
+            updateStats();
+        }
+    },
+    
+    grimm_corte: {
+        description: 'A primeira corte e o banquete',
+        execute: () => {
+            addLog('<span class="gold">=== O CORTEJO DA MORTE ===</span>', 'info');
+            addLog('<span class="blue">O ENCONTRO FATAL:</span>', 'blue');
+            addLog('"Ele encontrou um **grupo**."', 'blue');
+            addLog('"Seres de poder esmagador."', 'blue');
+            addLog('"Pela primeira vez em eras..."', 'blue');
+            addLog('"Sentiu algo diferente da fome: DESAFIO."', 'blue');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="luxury-purple">O ATAQUE INSANO:</span>', 'luxury-purple');
+            addLog('"Atacou sem hesitar."', 'luxury-purple');
+            addLog('"Impacto brutal."', 'luxury-purple');
+            addLog('"Lançado como brinquedo frágil."', 'luxury-purple');
+            addLog('"Ossos rangendo como gelo quebrando."', 'luxury-purple');
+            addLog('"Avançou de novo. E de novo."', 'luxury-purple');
+            addLog('"Não por coragem, mas por FOME."', 'luxury-purple');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="warning">A SUBMISSÃO:</span>', 'warning');
+            addLog('"O líder observou com interesse."', 'warning');
+            addLog('"— **Curvem-se diante dele**"', 'warning');
+            addLog('"E todos obedeceram."', 'warning');
+            addLog('"Grimm gostou. MUITO."', 'warning');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="experiment-purple">O ECLIPSE AZUL:</span>', 'purple');
+            addLog('"Juntos, avançaram como um eclipse."', 'purple');
+            addLog('"3.000 criaturas tombaram."', 'purple');
+            addLog('"Monstros. Guerreiros. Bestas antigas."', 'purple');
+            addLog('"Tudo alimentando a fome sem fim."', 'purple');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="gold">💀 O cortejo da morte começa...</span>', 'gold');
+            
+            addXP(25);
+            
+            GameState.corruption += 10;
+            updateStats();
+        }
+    },
+    
+    multile_pantera_completo: {
+        description: 'A ascensão canibal de Grimm',
+        execute: () => {
+            addLog('<span class="gold">=== MULTILE PANTERA! ===</span>', 'info');
+            addLog('<span class="blood-red">A VERDADE AMARGA:</span>', 'error');
+            addLog('"Conforme as vítimas cresciam..."', 'error');
+            addLog('"Uma verdade surgiu entre os seguidores:"', 'error');
+            addLog('"**ELES NUNCA SERIAM COMO ELE.**"', 'error');
+            addLog('"Nunca ascenderiam."', 'error');
+            addLog('"Nunca alcançariam."', 'error');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="luxury-purple">O SACRIFÍCIO VOLUNTÁRIO:</span>', 'luxury-purple');
+            addLog('"Num ato de devoção, ajoelharam-se."', 'luxury-purple');
+            addLog('"— **Consuma-nos.**"', 'luxury-purple');
+            addLog('"— **Use nosso poder.**"', 'luxury-purple');
+            addLog('"— **Reine sozinho.**"', 'luxury-purple');
+            addLog('"E Grimm, sem hesitar, aceitou."', 'luxury-purple');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="experiment-purple">O BANQUETE FINAL:</span>', 'purple');
+            addLog('"Um por um, foram devorados."', 'purple');
+            addLog('"Poderoso após poderoso."', 'purple');
+            addLog('"Alma após alma."', 'purple');
+            addLog('"Corpo azul faiscando."', 'purple');
+            addLog('"Ossos se rearranjando."', 'purple');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="blue">O NASCIMENTO DO REI:</span>', 'blue');
+            addLog('"Quando engoliu o último..."', 'blue');
+            addLog('"O mundo prendeu a respiração."', 'blue');
+            addLog('"A pantera se distorceu."', 'blue');
+            addLog('"Tornou-se algo **MAIOR**."', 'blue');
+            addLog('"**MAIS PERIGOSO**."', 'blue');
+            addLog('"**MAIS CONSCIENTE**."', 'blue');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="gold">👑 Figura humanoide, alta, esguia.</span>', 'gold');
+            addLog('<span class="gold">👑 Cabelos azulados como chamas geladas.</span>', 'gold');
+            addLog('<span class="gold">👑 Olhos que rasgam a realidade.</span>', 'gold');
+            addLog('', 'info');
+            addLog('<span class="luxury-purple">A pantera deixou de ser fera.</span>', 'luxury-purple');
+            addLog('<span class="luxury-purple">Agora, um REI nasce.</span>', 'luxury-purple');
+            
+            addXP(30);
+            unlockAchievement('Rei Devorador');
+            
+            GameState.sanity -= 8;
+            GameState.corruption += 15;
+            updateStats();
+            
+            // Efeito especial
+            document.body.classList.add('shake');
+            setTimeout(() => document.body.classList.remove('shake'), 800);
+        }
+    },
+    
+    encontro_violet: {
+        description: 'O confronto com Violet',
+        execute: () => {
+            addLog('<span class="gold">=== O ENCONTRO DO ABISMO ===</span>', 'info');
+            addLog('<span class="blue">O MUSGO AZUL:</span>', 'blue');
+            addLog('"Grimm encontrou musgo azul brilhante."', 'blue');
+            addLog('"Pulsante como coração vivo."', 'blue');
+            addLog('"Ao tocar, subiu pela sua pele."', 'blue');
+            addLog('"Arrancou-o com força."', 'blue');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="luxury-purple">ELA APARECE:</span>', 'luxury-purple');
+            addLog('"E então... ele a VIU."', 'luxury-purple');
+            addLog('"**ELA.**"', 'luxury-purple');
+            addLog('"Mulher que não deveria existir ali."', 'luxury-purple');
+            addLog('"Bela. Quase celestial."', 'luxury-purple');
+            addLog('"Cabelos dançando como sombra."', 'luxury-purple');
+            addLog('"Olhos que sabiam demais."', 'luxury-purple');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="warning">O INSTINTO:</span>', 'warning');
+            addLog('"*Algo nela estava errado...*"', 'warning');
+            addLog('"*Poderoso demais.*"', 'warning');
+            addLog('"Instintivo."', 'warning');
+            addLog('"Grimm avançou."', 'warning');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="blood-red">A HUMILHAÇÃO:</span>', 'error');
+            addLog('"Garras afiadas como diamante."', 'error');
+            addLog('"Corpo desapareceu em salto feroz."', 'error');
+            addLog('"Mas ela nem PISCOU."', 'error');
+            addLog('"Com um olhar, o musgo o lançou."', 'error');
+            addLog('"Como brinquedo frágil."', 'error');
+            addLog('"Esmagando rochas no impacto."', 'error');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="gold">😈 E ela... SORRIU.</span>', 'gold');
+            addLog('<span class="gold">😈 Sorriso de malícia, raiva... e DESEJO.</span>', 'gold');
+            
+            addXP(25);
+            unlockAchievement('Encontro do Abismo');
+            
+            GameState.sanity -= 6;
+            updateStats();
+        }
+    },
+    
+    pacto_cachorrinho: {
+        description: 'O pacto e a humilhação final',
+        execute: () => {
+            addLog('<span class="gold">=== CACHORRINHO ===</span>', 'info');
+            addLog('<span class="luxury-purple">A REAÇÃO DE GRIMM:</span>', 'luxury-purple');
+            addLog('"Ela caminhou até ele."', 'luxury-purple');
+            addLog('"Passos leves, quase dançando."', 'luxury-purple');
+            addLog('"Passou o dedo pelo seu queixo."', 'luxury-purple');
+            addLog('"Delicadezza perversa."', 'luxury-purple');
+            addLog('', 'luxury-purple');
+            addLog('"Grimm sentiu algo estranho."', 'luxury-purple');
+            addLog('"Arrepio. Confusão. Vulnerabilidade."', 'luxury-purple');
+            addLog('"Ele *odiou?* aquilo."', 'luxury-purple');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="warning">O ARRANHÃO:</span>', 'warning');
+            addLog('"Atacou de novo."', 'warning');
+            addLog('"Conseguiu arranhá-la."', 'warning');
+            addLog('"Linha fina de sangue na bochecha."', 'warning');
+            addLog('"Sorriso SUMIU."', 'warning');
+            addLog('"Olhos brilhando com IRA PURA."', 'warning');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="blood-red">O CONTRA-ATAQUE:</span>', 'error');
+            addLog('"**MAGIAS** como flechas."', 'error');
+            addLog('"Arremessado por dezenas de metros."', 'error');
+            addLog('"Corpo queimando."', 'error');
+            addLog('"Mas... ele LEVANTOU."', 'error');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="blue">A OFERTA:</span>', 'blue');
+            addLog('"Ela se curvou. Saudação formal."', 'blue');
+            addLog('"— *Violet.*"', 'blue');
+            addLog('"— *Líder do culto Herdeiros do Abismo.*"', 'blue');
+            addLog('"Estendeu a mão."', 'blue');
+            addLog('"Dedos finos, elegantes, PERIGOSOS."', 'blue');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="experiment-purple">A CARTA:</span>', 'purple');
+            addLog('"Puxou uma carta de tarot."', 'purple');
+            addLog('"**3 ESPADAS.**"', 'purple');
+            addLog('"Colocou na mão de Grimm."', 'purple');
+            addLog('"— *A vontade do Abismo foi feita.*"', 'purple');
+            addLog('"— *Junte-se a mim...*"', 'purple');
+            addLog('"— *...enfrente todos os poderosos.*"', 'purple');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="luxury-purple">A RESPOSTA ARROGANTE:</span>', 'luxury-purple');
+            addLog('"Grimm sorriu. Sorriso predatório."', 'luxury-purple');
+            addLog('"— *Aceito.*"', 'luxury-purple');
+            addLog('"— *Mas não recebo ordens de ninguém.*"', 'luxury-purple');
+            addLog('"— *Nem de você.*"', 'luxury-purple');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="gold">😏 O SORRISO CRUEL:</span>', 'gold');
+            addLog('"Sorriso dela se abriu. Cruel."', 'gold');
+            addLog('"Inclinou-se até seu ouvido."', 'gold');
+            addLog('"Perfume de flores e MORTE."', 'gold');
+            addLog('', 'gold');
+            addLog('<span class="blood-red" style="font-size: 16px;">"— *Claro... **CACHORRINHO.***"</span>', 'error');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="warning">A REAÇÃO:</span>', 'warning');
+            addLog('"Grimm CONGELOU."', 'warning');
+            addLog('"Arrepio na espinha."', 'warning');
+            addLog('"Onda quente no rosto."', 'warning');
+            addLog('"Vergonha? Excitação? Irritação?"', 'warning');
+            addLog('', 'warning');
+            addLog('<span class="blood-red">"Ele ficou **VERMELHO**."</span>', 'error');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="gold">🎭 Virou o rosto. Rosnou. Fingiu indiferença.</span>', 'gold');
+            addLog('<span class="gold">🎭 Mas Violet VIU TUDO.</span>', 'gold');
+            addLog('<span class="gold">🎭 Sorriu como quem domesticou uma fera lendária.</span>', 'gold');
+            
+            addXP(35);
+            unlockAchievement('Cachorro Domado');
+            
+            GameState.sanity -= 10;
+            GameState.corruption += 20;
+            updateStats();
+            
+            // Efeitos especiais
+            const glitchOverlay = document.getElementById('glitch-overlay');
+            if (glitchOverlay) {
+                glitchOverlay.style.opacity = '0.3';
+                setTimeout(() => glitchOverlay.style.opacity = '0', 3000);
+            }
+            
+            // Som de risada sussurrada
+            setTimeout(() => {
+                if (typeof VisualEffects !== 'undefined') {
+                    VisualEffects.playRandomWhisper();
+                }
+            }, 1500);
+        }
+    },
+
+    mira_origem: {
+        description: 'As raízes miseráveis de Mira Castello',
+        execute: () => {
+            addLog('<span class="gold">=== MIRA CASTELLO - AS RAÍZES DA MISÉRIA ===</span>', 'info');
+            addLog('<span class="luxury-purple">UMA FILOSOFIA PRÓPRIA:</span>', 'luxury-purple');
+            addLog('"De onde eu venho, não existem deuses."', 'luxury-purple');
+            addLog('"Não há autoridades divinas ou super poderosas."', 'luxury-purple');
+            addLog('"Nossas leis vêm de nós mesmos."', 'luxury-purple');
+            addLog('"Somos os monstros que nós mesmos criamos."', 'luxury-purple');
+            addLog('"Nunca fomos e não seremos abençoados."', 'luxury-purple');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="warning">A FOME ANCESTRAL:</span>', 'warning');
+            addLog('"Eu era pobre, garoto."', 'warning');
+            addLog('"Minha família eram os fazendeiros mais pequenos da terra."', 'warning');
+            addLog('"Cultivava pouco, vendia menos ainda."', 'warning');
+            addLog('"Não tinha nada."', 'warning');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="luxury-purple">UMA FAMÍLIA DISFUNCIONAL:</span>', 'luxury-purple');
+            addLog('"Meu pai era dono da própria terra."', 'luxury-purple');
+            addLog('"Minha mãe ficava em casa."', 'luxury-purple');
+            addLog('"Meus irmãos? Patéticos."', 'luxury-purple');
+            addLog('"Um mais imbecil que o outro."', 'luxury-purple');
+            addLog('"Lutando por migalhas de atenção."', 'luxury-purple');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="blood-red">O FRACASSO EM FORMA DE GAROTA:</span>', 'error');
+            addLog('"E imagine como foi para mim..."', 'error');
+            addLog('"Sem força, pequena, sem nada de especial."', 'error');
+            addLog('"O pior pesadelo para meu pai."', 'error');
+            addLog('"Uma garota inútil."', 'error');
+            addLog('"Jamais pôde carregar feno sem tropeçar."', 'error');
+            addLog('"Discutia com clientes."', 'error');
+            addLog('"Ficar em casa? Também não funcionava."', 'error');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="warning">A MALDIÇÃO GERACIONAL:</span>', 'warning');
+            addLog('"Minha família existe há gerações."', 'warning');
+            addLog('"Mas nunca saímos do fundo do poço."', 'warning');
+            addLog('"Não importava quanto tentassem."', 'warning');
+            addLog('"Tudo voltava à mesma etapa."', 'warning');
+            addLog('"Fome e pobreza cíclicas."', 'warning');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="experiment-purple">O EXPURGO:</span>', 'purple');
+            addLog('"Eles caíram sobre si mesmos."', 'purple');
+            addLog('"Marcados como família amaldiçoada."', 'purple');
+            addLog('"Tudo começou quando me expulsaram."', 'purple');
+            addLog('"Não sobrou nada quando olhei para trás."', 'purple');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="gold">☠️  O CAFÉ DA MANHÃ FINAL:</span>', 'gold');
+            addLog('"É pena meu pai não ver o que me tornei."', 'gold');
+            addLog('"Seu maldito café diário..."', 'gold');
+            addLog('"Cheiro tão forte que nem sentiu o veneno."', 'gold');
+            addLog('"Sem ele, você imagina o resto."', 'gold');
+            addLog('"Tanto trabalho... no fim, sobrou apenas eu."', 'gold');
+            addLog('"Última dos Castello."', 'gold');
+            addLog('"A maldita filha."', 'gold');
+            
+            addXP(25);
+            unlockAchievement('Última dos Castello');
+            
+            // Efeitos especiais para esta história pesada
+            GameState.sanity -= 12;
+            GameState.corruption += 8;
+            updateStats();
+            
+            // Efeito visual de sangue
+            setTimeout(() => {
+                if (typeof VisualEffects !== 'undefined') {
+                    VisualEffects.createBloodDrip();
+                }
+            }, 1000);
+            
+            // Log especial
+            setTimeout(() => {
+                addLog('<span class="blood-red">[SISTEMA] Registro emocional detectado: Ódio familiar</span>', 'error');
+                addLog('<span class="warning">[SISTEMA] Níveis de sanidade ajustados</span>', 'warning');
+            }, 2000);
+        }
+    }
+};
+
+// ==================== SISTEMA DE MODOS ====================
+function changeGameMode(mode) {
+    if (GameState.mode === 'survival' && GameState.corruptionInterval) {
+        clearInterval(GameState.corruptionInterval);
+        GameState.corruptionInterval = null;
+        
+        const bloodContainer = document.getElementById('blood-container');
+        if (bloodContainer) bloodContainer.innerHTML = '';
+        
+        const glitchOverlay = document.getElementById('glitch-overlay');
+        if (glitchOverlay) glitchOverlay.style.opacity = '0';
+    }
+    
+    GameState.mode = mode;
+    
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.mode === mode) {
+            btn.classList.add('active');
+        }
+    });
+    
+ switch(mode) {
+    case 'story':
+        addLog('[MODO] Modo História ativado.', 'highlight');
+        startStoryMode();
+        break;
+    case 'investigation':
+        addLog('[MODO] Modo Investigação ativado.', 'highlight');
+        startInvestigationMode();
+        break;
+    case 'survival':
+        addLog('[MODO] Modo Sobrevivência ativado.', 'warning');
+        startSurvivalMode();
+        break;
+}
+
+updateUI();
+}
+
+function startStoryMode() {
+if (GameState.progress === 0) {
+    setTimeout(() => {
+        addLog('[NARRATIVA] Sistema DIÁRIO DE BORDO v3.0 inicializado', 'blue');
+        addLog('[NARRATIVA] Acessando registros do Pesquisador...', 'blue');
+        addLog('[NARRATIVA] Use os comandos para explorar os experimentos.', 'info');
+        addLog('[SISTEMA] Conectando ao Arquivo do Olho da Ganância...', 'gold');
+        addLog('[SISTEMA] Use "list" para ver experimentos disponíveis', 'gold');
+        addLog('[SISTEMA] ⚠️  AVISO: Estes registros contêm experimentos extremos', 'warning');
+        addLog('[SISTEMA] ⚠️  Realizados sob influência do Olho da Ganância', 'warning');
+    }, 1000);
+}
+}
+
+function startInvestigationMode() {
+setTimeout(() => {
+    addLog('[INVESTIGAÇÃO] Mistério #1: O que aconteceu com a Cobaia 7?', 'purple');
+    addLog('[INVESTIGAÇÃO] Mistério #2: Origem do Sculk', 'purple');
+    addLog('[INVESTIGAÇÃO] Use comandos: examine, analyze, connect', 'purple');
+}, 1000);
+}
+
+function startSurvivalMode() {
+const overlays = document.querySelectorAll('.corruption-overlay');
+overlays.forEach(overlay => {
+    overlay.style.opacity = '0.3';
+});
+
+if (!GameState.corruptionInterval) {
+    GameState.corruptionInterval = setInterval(() => {
+        attemptCorruption();
+        
+        if (typeof VisualEffects !== 'undefined') {
+            if (Math.random() > 0.7) {
+                VisualEffects.playRandomWhisper();
+            }
+            if (Math.random() > 0.8) {
+                VisualEffects.createBloodDrip();
+            }
+        }
+    }, 30000);
+}
+}
+
+function attemptCorruption() {
+if (GameState.mode !== 'survival') return;
+
+const corruptionAttempts = [
+    () => {
+        addLog('[ABISMO] JUNTE-SE A NÓS... O CONHECIMENTO É ILIMITADO...', 'purple');
+        GameState.corruption += 5;
+        updateStats();
+    },
+    () => {
+        addLog('[VOZES] Por que se limitar à moralidade humana?', 'purple');
+        showPuzzle('corruption');
+    },
+    () => {
+        document.body.classList.add('shake');
+        setTimeout(() => document.body.classList.remove('shake'), 500);
+        addLog('[CORRUPÇÃO] O sistema treme... algo está tentando entrar.', 'warning');
+    }
+];
+
+const attempt = corruptionAttempts[Math.floor(Math.random() * corruptionAttempts.length)];
+attempt();
+}
+
+// ==================== EFEITOS VISUAIS ====================
+const VisualEffects = {
+isGlitchActive: false,
+isBloodActive: false,
+eyesCount: 0,
+maxEyes: 15,
+
+init() {
+    this.createEyes();
+    this.setupAudio();
+    this.startAmbientSounds();
+    this.applyBreathingEffect();
+    
+    setInterval(() => this.updateEffects(), 1000);
+},
+
+createEyes() {
+    const container = document.getElementById('eye-background');
+    if (!container) return;
+    
+    for (let i = 0; i < this.maxEyes; i++) {
+        setTimeout(() => {
+            const eye = document.createElement('div');
+            eye.className = 'eye';
+            
+            eye.style.left = `${Math.random() * 100}%`;
+            eye.style.top = `${Math.random() * 100}%`;
+            
+            const size = 20 + Math.random() * 40;
+            eye.style.width = `${size}px`;
+            eye.style.height = `${size}px`;
+            
+            eye.style.opacity = 0.1 + Math.random() * 0.3;
+            
+            container.appendChild(eye);
+            this.eyesCount++;
+        }, i * 500);
+    }
+},
+
+setupAudio() {
+    this.typingSounds = [
+        'https://assets.mixkit.co/sfx/preview/mixkit-fast-typing-on-typewriter-1116.mp3',
+        'https://assets.mixkit.co/sfx/preview/mixkit-hard-typewriter-click-1119.mp3',
+        'https://assets.mixkit.co/sfx/preview/mixkit-typewriter-click-1115.mp3'
+    ];        
+    this.heartbeatSound = 'https://assets.mixkit.co/sfx/preview/mixkit-single-heartbeat-493.mp3';
+    this.ambientSound = 'https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-ambience-353.mp3';
+    this.glitchSound = 'https://assets.mixkit.co/sfx/preview/mixkit-computer-glitch-2338.mp3';
+    this.bloodSound = 'https://assets.mixkit.co/sfx/preview/mixkit-water-drip-3000.mp3';
+    
+    this.whisperSounds = [
+        'https://assets.mixkit.co/sfx/preview/mixkit-male-voice-whisper-1136.mp3',
+        'https://assets.mixkit.co/sfx/preview/mixkit-female-voice-whisper-1137.mp3'
+    ];
+},
+
+startAmbientSounds() {
+    const ambient = document.getElementById('ambient-sound');
+    if (ambient) {
+        try {
+            ambient.src = this.ambientSound;
+            ambient.volume = 0.1;
+            ambient.play().catch(e => console.log('Audio autoplay blocked:', e));
+        } catch (e) {
+            console.log('Usando fallback de áudio');
+        }
+    }
+},
+
+updateEffects() {
+    this.updateSanityEffects();
+    this.updateCorruptionEffects();
+    this.updateSurvivalEffects();
+},
+
+updateSanityEffects() {
+    const sanity = GameState.sanity;
+    const eyeBg = document.getElementById('eye-background');
+    const glitchOverlay = document.getElementById('glitch-overlay');
+    
+    if (sanity < 50) {
+        const opacity = (50 - sanity) / 100;
+        if (eyeBg) eyeBg.style.opacity = Math.min(opacity, 0.5);
+        
+        if (sanity < 30 && glitchOverlay) {
+            glitchOverlay.style.opacity = (30 - sanity) / 50;
+        }
+        
+        if (sanity < 20 && !document.body.classList.contains('low-sanity-shake')) {
+            document.body.classList.add('low-sanity-shake');
+        }
+        
+        if (sanity < 40 && Math.random() > 0.7) {
+            this.applyRandomGlitch();
+        }
+    } else {
+        if (eyeBg) eyeBg.style.opacity = 0;
+        if (glitchOverlay) glitchOverlay.style.opacity = 0;
+        document.body.classList.remove('low-sanity-shake');
+    }
+},
+
+updateCorruptionEffects() {
+    const corruption = GameState.corruption;
+    
+    this.updateHeartbeat(corruption);
+    
+    if (corruption > 30 && Math.random() > 0.95) {
+        this.playRandomWhisper();
+    }
+    
+    if (corruption > 50) {
+        const elements = document.querySelectorAll('.tab, .mode-btn, .stat-item');
+        elements.forEach(el => {
+            if (!el.classList.contains('corruption-pulse') && Math.random() > 0.8) {
+                el.classList.add('corruption-pulse');
+                setTimeout(() => el.classList.remove('corruption-pulse'), 3000);
+            }
+        });
+    }
+},
+
+updateSurvivalEffects() {
+    if (GameState.mode === 'survival') {
+        if (!this.isBloodActive && Math.random() > 0.95) {
+            this.createBloodDrip();
+        }
+        
+        const survivalTime = GameState.commandHistory.length;
+        if (survivalTime > 50 && Math.random() > 0.98) {
+            this.playGlitchSound();
+        }
+    }
+},
+
+applyRandomGlitch() {
+    const logLines = document.querySelectorAll('.log-line');
+    if (logLines.length > 0) {
+        const randomLine = logLines[Math.floor(Math.random() * logLines.length)];
+        randomLine.classList.add('glitch-effect');
+        
+        this.playGlitchSound();
+        
+        setTimeout(() => {
+            randomLine.classList.remove('glitch-effect');
+        }, 500);
+    }
+},
+
+createBloodDrip() {
+    this.isBloodActive = true;
+    const container = document.getElementById('blood-container');
+    
+    for (let i = 0; i < 3; i++) {
+        const drip = document.createElement('div');
+        drip.className = 'blood-drip';
+        
+        const side = Math.floor(Math.random() * 4);
+        switch(side) {
+            case 0:
+                drip.style.left = `${Math.random() * 100}%`;
+                drip.style.top = '0';
+                break;
+            case 1:
+                drip.style.right = '0';
+                drip.style.top = `${Math.random() * 100}%`;
+                drip.style.transform = 'rotate(90deg)';
+                break;
+            case 2:
+                drip.style.left = `${Math.random() * 100}%`;
+                drip.style.bottom = '0';
+                drip.style.transform = 'rotate(180deg)';
+                break;
+            case 3:
+                drip.style.left = '0';
+                drip.style.top = `${Math.random() * 100}%`;
+                drip.style.transform = 'rotate(270deg)';
+                break;
+        }
+        
+        const red = 139 + Math.floor(Math.random() * 100);
+        drip.style.background = `linear-gradient(to bottom, 
+            transparent 0%, 
+            rgba(${red}, 0, 0, 0.8) 10%, 
+            rgba(139, 0, 0, 0.6) 30%, 
+            transparent 100%)`;
+        
+        container.appendChild(drip);
+        
+        this.playBloodDripSound();
+        
+        setTimeout(() => {
+            if (drip.parentNode === container) {
+                container.removeChild(drip);
+            }
+        }, 15000);
+    }
+    
+    setTimeout(() => {
+        this.isBloodActive = false;
+    }, 5000);
+},
+
+updateHeartbeat(corruption) {
+    const heartbeat = document.getElementById('heartbeat-sound');
+    if (!heartbeat) return;
+    
+    if (corruption > 20) {
+        if (heartbeat.paused) {
+            try {
+                heartbeat.src = this.heartbeatSound;
+                heartbeat.volume = 0.1 + (corruption / 100) * 0.3;
+                heartbeat.play().catch(e => console.log('Heartbeat audio error:', e));
+            } catch (e) {
+                console.log('Heartbeat fallback');
+            }
+        }
+        
+        heartbeat.volume = 0.1 + (corruption / 100) * 0.4;
+        
+    } else {
+        heartbeat.pause();
+        heartbeat.currentTime = 0;
+    }
+},
+
+playTypingSound() {
+    if (Math.random() > 0.3) return;
+    
+    const typing = document.getElementById('typing-sound');
+    if (typing) {
+        const randomSound = this.typingSounds[Math.floor(Math.random() * this.typingSounds.length)];
+        try {
+            typing.src = randomSound;
+            typing.volume = 0.2;
+            typing.currentTime = 0;
+            typing.play().catch(e => console.log('Typing sound error'));
+        } catch (e) {
+        }
+    }
+},
+
+playRandomWhisper() {
+    const whisper = document.getElementById('whisper-sound');
+    if (whisper) {
+        const randomSound = this.whisperSounds[Math.floor(Math.random() * this.whisperSounds.length)];
+        try {
+            whisper.src = randomSound;
+            whisper.volume = 0.05 + (GameState.corruption / 100) * 0.1;
+            whisper.currentTime = 0;
+            whisper.play().catch(e => console.log('Whisper sound error'));
+            
+            this.showWhisperEffect();
+        } catch (e) {
+        }
+    }
+},
+
+showWhisperEffect() {
+    const whisperText = document.createElement('div');
+    whisperText.style.position = 'fixed';
+    whisperText.style.left = `${10 + Math.random() * 80}%`;
+    whisperText.style.top = `${10 + Math.random() * 80}%`;
+    whisperText.style.color = 'rgba(160, 66, 255, 0.7)';
+    whisperText.style.fontSize = '14px';
+    whisperText.style.fontFamily = 'Consolas, monospace';
+    whisperText.style.pointerEvents = 'none';
+    whisperText.style.zIndex = '10000';
+    whisperText.style.textShadow = '0 0 10px rgba(160, 66, 255, 0.5)';
+    whisperText.style.opacity = '0';
+    
+    const whispers = [
+        'Junte-se a nós...',
+        'O conhecimento é dor...',
+        'Você está sozinho...',
+        'O Olho observa...',
+        'Corrompa-se...',
+        'A verdade machuca...',
+        'Abra seus olhos...',
+        'Não resista...',
+        'Seja um com o Abismo...',
+        'A ganância é virtude...'
+    ];
+    
+    whisperText.textContent = whispers[Math.floor(Math.random() * whispers.length)];
+    document.body.appendChild(whisperText);
+    
+    whisperText.animate([
+        { opacity: 0, transform: 'translateY(10px)' },
+        { opacity: 0.8, transform: 'translateY(0)' },
+        { opacity: 0, transform: 'translateY(-10px)' }
+    ], {
+        duration: 3000,
+        easing: 'ease-in-out'
+    });
+    
+    setTimeout(() => {
+        if (whisperText.parentNode) {
+            whisperText.parentNode.removeChild(whisperText);
+        }
+    }, 3000);
+},
+
+playGlitchSound() {
+    const glitch = document.getElementById('glitch-sound');
+    if (glitch && Math.random() > 0.5) {
+        try {
+            glitch.src = this.glitchSound;
+            glitch.volume = 0.3;
+            glitch.currentTime = 0;
+            glitch.play().catch(e => console.log('Glitch sound error'));
+        } catch (e) {
+        }
+    }
+},
+
+playBloodDripSound() {
+    const blood = document.getElementById('blood-drip-sound');
+    if (blood) {
+        try {
+            blood.src = this.bloodSound;
+            blood.volume = 0.2;
+            blood.currentTime = 0;
+            blood.play().catch(e => console.log('Blood drip sound error'));
+        } catch (e) {
+        }
+    }
+},
+
+applyBreathingEffect() {
+    const prompt = document.querySelector('.prompt');
+    if (prompt && !prompt.classList.contains('breathing-text')) {
+        prompt.classList.add('breathing-text');
+    }
+    
+    const logs = document.querySelectorAll('.log-line');
+    if (logs.length > 0 && Math.random() > 0.8) {
+        const randomLog = logs[Math.floor(Math.random() * logs.length)];
+        randomLog.classList.add('breathing-text');
+        setTimeout(() => randomLog.classList.remove('breathing-text'), 8000);
+    }
+}
+};
+
+// ==================== INICIALIZAÇÃO ====================
+function init() {
+console.log("Sistema iniciando...");
+
+loadSave();
+
+const input = document.getElementById('command-input');
+const prompt = document.getElementById('prompt');
+
+updateMediaGrid();
+updateMap();
+
+VisualEffects.init();
+
+setTimeout(() => {
+    addLog('DIÁRIO DE BORDO v3.0 - SISTEMA INICIALIZADO', 'highlight');
+    addLog('Digite "help" para ver os comandos disponíveis', 'info');
+    
+    if (GameState.commandHistory.length === 0) {
+        unlockAchievement('Primeiro Acesso');
+    }
+}, 500);
+
+input.addEventListener('keydown', (e) => {
+    if (e.key.length === 1 || e.key === 'Backspace' || e.key === 'Enter') {
+        VisualEffects.playTypingSound();
+    }
+    
+    if (e.key === 'Enter') {
+        const commandText = input.value.trim();
+        if (commandText) {
+            GameState.commandHistory.push(commandText);
+            
+            prompt.textContent = `pesquisador@${GameState.mode}:~$`;
+            addLog(`<span class="prompt">pesquisador@${GameState.mode}:~$</span> ${commandText}`, 'info');
+            
+            const parts = commandText.split(' ');
+            const cmd = parts[0].toLowerCase();
+            const args = parts.slice(1);
+            
+            if (commands[cmd]) {
+                commands[cmd].execute(args);
+                
+                // Verificar conquistas específicas após comandos
+                if (cmd.startsWith('grimm_')) {
+                    checkGrimmAchievements();
+                } else if (cmd.startsWith('abel_')) {
+                    checkAbelAchievements();
+                } else if (cmd.startsWith('mira_')) {
+                    checkMiraAchievements();
+                }
+            } else {
+                addLog(`Comando não encontrado: ${cmd}`, 'error');
+                addLog('Digite "help" para ajuda', 'info');
+            }
+            
+            input.value = '';
+            updateUI();
+        }
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (GameState.commandHistory.length > 0) {
+            if (GameState.historyIndex === undefined) {
+                GameState.historyIndex = GameState.commandHistory.length - 1;
+            } else {
+                GameState.historyIndex = Math.max(0, GameState.historyIndex - 1);
+            }
+            input.value = GameState.commandHistory[GameState.historyIndex];
+        }
+    } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (GameState.historyIndex !== undefined) {
+            if (GameState.historyIndex >= GameState.commandHistory.length - 1) {
+                GameState.historyIndex = undefined;
+                input.value = '';
+            } else {
+                GameState.historyIndex++;
+                input.value = GameState.commandHistory[GameState.historyIndex];
+            }
+        }
+    }
+});
+
+input.focus();
+
+const placeholders = [
+    'Digite "list" para ver experimentos...',
+    'Tente "access EXPERIMENTO047"...',
+    'Use "access EXPERIMENTO184" para infecções...',
+    'Acesse "EXPERIMENTO201" para projeto gestação...',
+    'Digite "help" para todos os comandos...',
+    'Digite "preguiça" para saber sobre Hypnos...',
+    'Use "abandono" para história triste de Hypnos...',
+    'Tente "desespero" para o final da história...',
+    'Digite "treinamento" para saber sobre a arma...',
+    'Use "grimm_fera" para conhecer a fera primordial...',
+    'Tente "multile_pantera_completo" para ascensão canibal...',
+    'Digite "pacto_cachorrinho" para o momento icônico...',
+    'Explore "encontro_violet" para o confronto com Violet...',
+    'Digite "mira_origem" para conhecer a história sombria...',
+    'Digite "abel_origem" para o banquete do exílio...',
+    'Use "abel_gula" para a ascensão do Novo Gula...',
+    'Tente "abel_filosofia" para compreender o peso da alma...',
+    'Explore "abel_pacto" para o pacto com Violet...',
+    'Conheça "abel_seraph" e a travessia da fada...'
+];
+
+let phIndex = 0;
+let typing = true;
+let phText = '';
+
+function typePlaceholder() {
+    if (typing) {
+        if (phText.length < placeholders[phIndex].length) {
+            phText += placeholders[phIndex][phText.length];
+            input.placeholder = phText;
+            setTimeout(typePlaceholder, 50);
+        } else {
+            typing = false;
+            setTimeout(typePlaceholder, 2000);
+        }
+    } else {
+        if (phText.length > 0) {
+            phText = phText.slice(0, -1);
+            input.placeholder = phText;
+            setTimeout(typePlaceholder, 30);
+        } else {
+            typing = true;
+            phIndex = (phIndex + 1) % placeholders.length;
+            setTimeout(typePlaceholder, 500);
+        }
+    }
+}
+
+typePlaceholder();
+
+setInterval(autoSave, 60000);
+
+setInterval(() => {
+    if (Math.random() > 0.6) {
+        blinkEye();
+    }
+}, 3000 + Math.random() * 4000);
+}
+
+// Função para verificar conquistas de Abel
+function checkAbelAchievements() {
+let abelCommandsUsed = 0;
+const abelCommands = ['abel_origem', 'abel_seraph', 'abel_gula', 'abel_pacto', 'abel_filosofia'];
+
+GameState.commandHistory.forEach(cmd => {
+    const baseCmd = cmd.split(' ')[0].toLowerCase();
+    if (abelCommands.includes(baseCmd)) {
+        abelCommandsUsed++;
+    }
+});
+
+if (abelCommandsUsed >= 1 && !GameState.achievements.has('Príncipe do Banquete')) {
+    unlockAchievement('Príncipe do Banquete');
+}
+if (abelCommandsUsed >= 2 && !GameState.achievements.has('Patricida Nobre')) {
+    unlockAchievement('Patricida Nobre');
+}
+if (abelCommandsUsed >= 3 && !GameState.achievements.has('Sobrevivente do Vazio')) {
+    unlockAchievement('Sobrevivente do Vazio');
+}
+if (abelCommandsUsed >= 4 && !GameState.achievements.has('Nova Gula')) {
+    unlockAchievement('Nova Gula');
+}
+if (abelCommandsUsed >= 5 && !GameState.achievements.has('Mestre de Cerimônias')) {
+    unlockAchievement('Mestre de Cerimônias');
+    unlockAchievement('Peso da Alma');
+}
+}
+
+// Função para verificar conquistas de Mira
+function checkMiraAchievements() {
+let miraCommandsUsed = 0;
+const miraCommands = ['mira_origem'];
+
+GameState.commandHistory.forEach(cmd => {
+    const baseCmd = cmd.split(' ')[0].toLowerCase();
+    if (miraCommands.includes(baseCmd)) {
+        miraCommandsUsed++;
+    }
+});
+
+if (miraCommandsUsed >= 1 && !GameState.achievements.has('Última dos Castello')) {
+    unlockAchievement('Última dos Castello');
+}
+}
+
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
