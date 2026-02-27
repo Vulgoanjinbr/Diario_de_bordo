@@ -917,7 +917,14 @@ const achievementsList = {
     'Encontro do Abismo': { description: 'Viu o confronto entre Grimm e Violet', unlocked: false },
     'Cachorro Domado': { description: 'Testemunhou a humilhação de Grimm', unlocked: false },
     'Última dos Castello': { description: 'Conheceu a origem miserável de Mira Castello', unlocked: false },
-    'Conhecedor da Besta': { description: 'Descobriu toda a história de Grimm', unlocked: false }
+    'Conhecedor da Besta': { description: 'Descobriu toda a história de Grimm', unlocked: false },
+    // Conquistas de Abel Donquixote (Gula)
+    'Príncipe do Banquete': { description: 'Conheceu a origem trágica de Abel Donquixote', unlocked: false },
+    'Patricida Nobre': { description: 'Testemunhou o estancamento da linhagem', unlocked: false },
+    'Sobrevivente do Vazio': { description: 'Acompanhou a travessia de Seraph', unlocked: false },
+    'Nova Gula': { description: 'Viu a ascensão do pecado da Gula', unlocked: false },
+    'Mestre de Cerimônias': { description: 'Compreendeu o código de Abel', unlocked: false },
+    'Peso da Alma': { description: 'Absorveu a filosofia existencial de Abel', unlocked: false }
 };
 
 const mediaItems = {
@@ -1985,6 +1992,15 @@ const commands = {
             addLog('pacto_cachorrinho   - O pacto e a humilhação final', 'blue');
             addLog('', 'info');
             
+            // ADICIONADO: Seção de Abel no comando help
+            addLog('<span class="experiment-purple">ABEL DONQUIXOTE - A GULA 👑:</span>', 'experiment-purple');
+            addLog('abel_origem        - A nobreza traída de Abel Donquixote', 'experiment-purple');
+            addLog('abel_seraph        - A travessia com Seraph', 'experiment-purple');
+            addLog('abel_gula          - A ascensão do Novo Gula', 'experiment-purple');
+            addLog('abel_pacto         - O pacto com Violet', 'experiment-purple');
+            addLog('abel_filosofia     - A filosofia do peso e da realeza', 'experiment-purple');
+            addLog('', 'info');
+            
             addLog('<span class="blue">COMANDOS BÁSICOS:</span>', 'info');
             addLog('help        - Mostrar esta ajuda', 'info');
             addLog('clear       - Limpar terminal', 'info');
@@ -2946,6 +2962,272 @@ ORIGEM: Desconhecida.`
                 addLog('<span class="warning">[SISTEMA] Níveis de sanidade ajustados</span>', 'warning');
             }, 2000);
         }
+    },
+    
+    // ==================== ABEL DONQUIXOTE - A GULA ====================
+    // ADICIONADO: Comandos completos de Abel
+    abel_origem: {
+        description: 'A nobreza traída de Abel Donquixote',
+        execute: () => {
+            addLog('<span class="gold">=== ABEL DONQUIXOTE - O BANQUETE DO EXÍLIO ===</span>', 'info');
+            
+            addLog('<span class="luxury-purple">O HERDEIRO DOS REINOS ANTIGOS:</span>', 'luxury-purple');
+            addLog('"Abel nasceu em um universo de reinos antigos."', 'luxury-purple');
+            addLog('"Herdeiro da linhagem Donquixote."', 'luxury-purple');
+            addLog('"Sua vida foi marcada pelo ato que ele mais despreza:"', 'luxury-purple');
+            addLog('"A **"nobreza"** de seu pai."', 'luxury-purple');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="warning">O PECADO DO PAI:</span>', 'warning');
+            addLog('"O pai abdicou de TODO poder e status."', 'warning');
+            addLog('"Viver uma vida de bondade e pobreza."', 'warning');
+            addLog('"Para Abel, isso não foi sacrifício."', 'warning');
+            addLog('"Foi **"vazamento de substância"**."', 'warning');
+            addLog('"Tornaram-se irrelevantes. Vulneráveis."', 'warning');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="blood-red">O ESTANCAMENTO:</span>', 'error');
+            addLog('"Para interromper a ruína da família..."', 'error');
+            addLog('"Abel cometeu o PATRICÍDIO."', 'error');
+            addLog('"Não por ódio."', 'error');
+            addLog('"Por lógica fria."', 'error');
+            addLog('"O pai era o último obstáculo."', 'error');
+            addLog('"Para retomar o **"peso"** do nome."', 'error');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="experiment-purple">A EXPULSÃO:</span>', 'purple');
+            addLog('"Sua fome por poder o levou ao exílio."', 'purple');
+            addLog('"Expulso de seu universo original."', 'purple');
+            addLog('"Lançado para ALÉM da barreira."', 'purple');
+            addLog('"Para o mundo que protegia contra..."', 'purple');
+            addLog('"O **SCULK**. O vazio devorador."', 'purple');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="gold">⚔️ O primeiro ato de um rei sem coroa.</span>', 'gold');
+            
+            addXP(20);
+            unlockAchievement('Príncipe do Banquete');
+            unlockAchievement('Patricida Nobre');
+            
+            GameState.sanity -= 15;
+            GameState.corruption += 10;
+            updateStats();
+        }
+    },
+
+    abel_seraph: {
+        description: 'A travessia com Seraph',
+        execute: () => {
+            addLog('<span class="gold">=== A TRAVESSIA DE SERAPH ===</span>', 'info');
+            
+            addLog('<span class="blue">À BEIRA DA ANIQUILAÇÃO:</span>', 'blue');
+            addLog('"O vazio o consumia."', 'blue');
+            addLog('"O Sculk sussurrava em seus ossos."', 'blue');
+            addLog('"A morte era certa."', 'blue');
+            addLog('"Mas então..."', 'blue');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="luxury-purple">A FADA:</span>', 'luxury-purple');
+            addLog('"**SERAPH** o encontrou."', 'luxury-purple');
+            addLog('"Viu nele algo raro."', 'luxury-purple');
+            addLog('"Uma vontade capaz de sobreviver."', 'luxury-purple');
+            addLog('"Capaz de existir onde a morte tem peso diferente."', 'luxury-purple');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="gold">🌀 O PORTAL:</span>', 'gold');
+            addLog('"Ela abriu um portal."', 'gold');
+            addLog('"Para o universo de **SOULS**."', 'gold');
+            addLog('"Um lugar onde almas são moeda."', 'gold');
+            addLog('"Onde a fome pode ser saciada."', 'gold');
+            addLog('"Onde um exilado poderia REINAR."', 'gold');
+            
+            addXP(25);
+            unlockAchievement('Sobrevivente do Vazio');
+            
+            GameState.corruption += 15;
+            updateStats();
+            
+            // Efeito visual de portal
+            setTimeout(() => {
+                const eye = document.getElementById('void-eye');
+                if (eye) {
+                    eye.style.animation = 'none';
+                    eye.offsetHeight;
+                    eye.style.animation = 'eyePulse 2s infinite';
+                }
+            }, 500);
+        }
+    },
+
+    abel_gula: {
+        description: 'A ascensão do Novo Gula',
+        execute: () => {
+            addLog('<span class="gold">=== O NOVO GULA ===</span>', 'info');
+            
+            addLog('<span class="warning">O ANTIGO DETENTOR:</span>', 'warning');
+            addLog('"No universo de Souls..."', 'warning');
+            addLog('"Havia o antigo pecado da Gula."', 'warning');
+            addLog('"Uma besta."', 'warning');
+            addLog('"Comia por INSTINTO."', 'warning');
+            addLog('"Sem propósito. Sem realeza."', 'warning');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="blood-red">O JULGAMENTO:</span>', 'error');
+            addLog('"Abel o julgou."', 'error');
+            addLog('"Indigno do título."', 'error');
+            addLog('"Uma criatura que apenas DEVORAVA."', 'error');
+            addLog('"Sem entender o **peso** do ato."', 'error');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="experiment-purple">O PARICÍDIO DO PECADO:</span>', 'purple');
+            addLog('"Abel o MATOU."', 'purple');
+            addLog('"Assumiu o cargo."', 'purple');
+            addLog('"TRANSFORMOU o pecado."', 'purple');
+            addLog('"De **"fome de carne"** "', 'purple');
+            addLog('"Para **"fome de STATUS E CONTROLE"**."', 'purple');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="gold">👑 A GULA RENASCIDA:</span>', 'gold');
+            addLog('"Não mais uma besta faminta."', 'gold');
+            addLog('"Agora um REI que CONSOME."', 'gold');
+            addLog('"Não comida. Importância."', 'gold');
+            addLog('"Não sobrevivência. DOMINAÇÃO."', 'gold');
+            
+            addXP(30);
+            unlockAchievement('Nova Gula');
+            
+            GameState.corruption += 25;
+            GameState.sanity -= 5;
+            updateStats();
+        }
+    },
+
+    abel_pacto: {
+        description: 'O pacto com Violet',
+        execute: () => {
+            addLog('<span class="gold">=== O PACTO DOS PECADOS ===</span>', 'info');
+            
+            addLog('<span class="luxury-purple">A ATENÇÃO DE VIOLET:</span>', 'luxury-purple');
+            addLog('"A ascensão de Abel atraiu olhares."', 'luxury-purple');
+            addLog('"O principal deles:"', 'luxury-purple');
+            addLog('"**VIOLET.**"', 'luxury-purple');
+            addLog('"O pecado que ele respeita."', 'luxury-purple');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="warning">O RECONHECIMENTO:</span>', 'warning');
+            addLog('"Violet viu nele o que outros não viam."', 'warning');
+            addLog('"Um REI."', 'warning');
+            addLog('"Não um seguidor."', 'warning');
+            addLog('"Um igual."', 'warning');
+            addLog('"Um prato que merece ser apreciado."', 'warning');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="blue">A OFERTA:</span>', 'blue');
+            addLog('"Ela lhe prometeu os MEIOS."', 'blue');
+            addLog('"Os meios para reconquistar seu TRONO ORIGINAL."', 'blue');
+            addLog('"O universo que o expulsou."', 'blue');
+            addLog('"A linhagem que o abandonou."', 'blue');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="gold">🤝 A ALIANÇA:</span>', 'gold');
+            addLog('"Abel aceitou ser recrutado."', 'gold');
+            addLog('"Não por submissão."', 'gold');
+            addLog('"Por VISÃO."', 'gold');
+            addLog('"Viu nos Pecados o banquete ideal."', 'gold');
+            addLog('"O palco para sua ascensão FINAL."', 'gold');
+            
+            addXP(25);
+            
+            GameState.corruption += 15;
+            updateStats();
+        }
+    },
+
+    abel_filosofia: {
+        description: 'A filosofia do peso e da realeza',
+        execute: () => {
+            addLog('<span class="gold">=== O MESTRE DE CERIMÔNIAS ===</span>', 'info');
+            
+            addLog('<span class="luxury-purple">ARISTOCRACIA IMPECÁVEL:</span>', 'luxury-purple');
+            addLog('"Polido. Elegante."', 'luxury-purple');
+            addLog('"Postura de realeza mesmo no caos."', 'luxury-purple');
+            addLog('"Força-se a ser bom e educado."', 'luxury-purple');
+            addLog('"Pois grosseria é fraqueza."', 'luxury-purple');
+            addLog('"É **"leveza"**."', 'luxury-purple');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="warning">A GULA EXISTENCIAL:</span>', 'warning');
+            addLog('"Não busca comida."', 'warning');
+            addLog('"Busca IMPORTÂNCIA."', 'warning');
+            addLog('"Busca CONTROLE."', 'warning');
+            addLog('"Quer ser o centro gravitacional."', 'warning');
+            addLog('"Do destino das PESSOAS."', 'warning');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="experiment-purple">O PESO DA ALMA:</span>', 'purple');
+            addLog('"O mundo se divide em:"', 'purple');
+            addLog('"Quem tem **"PESO"**."', 'purple');
+            addLog('"Substância. Poder. Vontade."', 'purple');
+            addLog('"E quem é **"LEVE"**."', 'purple');
+            addLog('"Irrelevante. Descartável."', 'purple');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="blue">O CÓDIGO DOS REIS:</span>', 'blue');
+            addLog('"Respeito ABSOLUTO por autoridade verdadeira."', 'blue');
+            addLog('"Reis. Violet."', 'blue');
+            addLog('"Um rei que governa com CONVICÇÃO..."', 'blue');
+            addLog('"É o único prato que merece ser apreciado como IGUAL."', 'blue');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="gold">🕊️ PROTEÇÃO À INOCÊNCIA:</span>', 'gold');
+            addLog('"Nunca ferir CRIANÇAS."', 'gold');
+            addLog('"Regra inquebrável."', 'gold');
+            addLog('"Ele as vê como:"', 'gold');
+            addLog('"**"Pratos não contaminados"**."', 'gold');
+            addLog('"Potencial PURO."', 'gold');
+            addLog('"O que ele PERDEU quando sua linhagem foi humilhada."', 'gold');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="experiment-purple">O MANIPULADOR:</span>', 'purple');
+            addLog('"Utiliza fios METAFÍSICOS."', 'purple');
+            addLog('"Controla ações à DISTÂNCIA."', 'purple');
+            addLog('"Mestre de MARIONETES."', 'purple');
+            addLog('"Em um banquete onde ele decide:"', 'purple');
+            addLog('"Quem VIVE."', 'purple');
+            addLog('"Quem é DEVORADO."', 'purple');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="gold">💬 FRASE TÍPICA:</span>', 'gold');
+            addLog('<span class="luxury-purple">"A bondade do meu pai nos tornou invisíveis."</span>', 'luxury-purple');
+            addLog('<span class="luxury-purple">"Eu prefiro ser um monstro que o mundo é obrigado a olhar,"</span>', 'luxury-purple');
+            addLog('<span class="luxury-purple">"do que um santo que o mundo se permite ignorar."</span>', 'luxury-purple');
+            
+            addXP(35);
+            unlockAchievement('Mestre de Cerimônias');
+            unlockAchievement('Peso da Alma');
+            
+            GameState.sanity -= 8;
+            GameState.corruption += 10;
+            updateStats();
+        }
     }
 };
 
@@ -3452,6 +3734,10 @@ input.addEventListener('keydown', (e) => {
                     checkAbelAchievements();
                 } else if (cmd.startsWith('mira_')) {
                     checkMiraAchievements();
+                } else if (cmd.startsWith('violet') || cmd.startsWith('bazar') || cmd.startsWith('crescimento') || cmd.startsWith('escola') || cmd.startsWith('maturidade')) {
+                    checkVioletAchievements();
+                } else if (cmd.startsWith('preguiça') || cmd.startsWith('hypnos') || cmd.startsWith('violet_hypnos') || cmd.startsWith('treinamento') || cmd.startsWith('abandono') || cmd.startsWith('desespero')) {
+                    checkHypnosAchievements();
                 }
             } else {
                 addLog(`Comando não encontrado: ${cmd}`, 'error');
