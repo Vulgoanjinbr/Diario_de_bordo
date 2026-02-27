@@ -918,6 +918,13 @@ const achievementsList = {
     'Cachorro Domado': { description: 'Testemunhou a humilhação de Grimm', unlocked: false },
     'Última dos Castello': { description: 'Conheceu a origem miserável de Mira Castello', unlocked: false },
     'Conhecedor da Besta': { description: 'Descobriu toda a história de Grimm', unlocked: false }
+    // Adicione estas linhas DENTRO do objeto achievementsList
+'Príncipe do Banquete': { description: 'Conheceu a origem trágica de Abel Donquixote', unlocked: false },
+'Patricida Nobre': { description: 'Testemunhou o estancamento da linhagem', unlocked: false },
+'Sobrevivente do Vazio': { description: 'Acompanhou a travessia de Seraph', unlocked: false },
+'Nova Gula': { description: 'Viu a ascensão do pecado da Gula', unlocked: false },
+'Mestre de Cerimônias': { description: 'Compreendeu o código de Abel', unlocked: false },
+'Peso da Alma': { description: 'Absorveu a filosofia existencial de Abel', unlocked: false },
 };
 
 const mediaItems = {
@@ -2015,6 +2022,14 @@ const commands = {
             addLog('stats       - Ver estatísticas detalhadas', 'info');
             addLog('achievements - Ver conquistas', 'info');
             addLog('decrypt     - Descriptografia avançada', 'warning');
+            // Adicione após a seção de Grimm:
+addLog('<span class="experiment-purple">ABEL DONQUIXOTE - A GULA 👑:</span>', 'experiment-purple');
+addLog('abel_origem        - A nobreza traída de Abel Donquixote', 'experiment-purple');
+addLog('abel_seraph        - A travessia com Seraph', 'experiment-purple');
+addLog('abel_gula          - A ascensão do Novo Gula', 'experiment-purple');
+addLog('abel_pacto         - O pacto com Violet', 'experiment-purple');
+addLog('abel_filosofia     - A filosofia do peso e da realeza', 'experiment-purple');
+addLog('', 'info');
         }
     },
     
