@@ -758,25 +758,58 @@
     .pantera-glow {
         animation: panteraGlow 3s infinite;
     }
+
+    /* =========================
+       OVERLAY DO ORGULHO
+    ========================= */
+    #orgulhoOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: black;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 99999;
+        cursor: pointer;
+    }
+
+    #orgulhoOverlay img {
+        max-width: 90%;
+        max-height: 90%;
+        animation: aparecer 0.2s ease-in-out;
+    }
+
+    @keyframes aparecer {
+        from { opacity: 0; transform: scale(0.9); }
+        to { opacity: 1; transform: scale(1); }
+    }
 </style>
 </head>
 <body>
-    <!-- Efeitos Visuais -->
-<div id="blood-container" class="blood-effect"></div>
-<div id="eye-background" class="eye-background"></div>
-<div id="glitch-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:9997; opacity:0; background:linear-gradient(transparent 50%, rgba(255,0,0,0.02) 50%); background-size:100% 4px; mix-blend-mode:overlay;"></div>
+    <!-- Overlay do Orgulho -->
+    <div id="orgulhoOverlay">
+        <img src="orgulho.png" alt="Orgulho" onerror="this.src='https://via.placeholder.com/400x400?text=ORGULHO'">
+    </div>
 
-<!-- Sistema de Áudio -->
-<audio id="typing-sound" preload="auto" style="display:none;"></audio>
-<audio id="whisper-sound" preload="auto" style="display:none;"></audio>
-<audio id="heartbeat-sound" preload="auto" style="display:none;" loop></audio>
-<audio id="ambient-sound" preload="auto" style="display:none;" loop></audio>
-<audio id="glitch-sound" preload="auto" style="display:none;"></audio>
-<audio id="blood-drip-sound" preload="auto" style="display:none;"></audio>
+    <!-- Efeitos Visuais -->
+    <div id="blood-container" class="blood-effect"></div>
+    <div id="eye-background" class="eye-background"></div>
+    <div id="glitch-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:9997; opacity:0; background:linear-gradient(transparent 50%, rgba(255,0,0,0.02) 50%); background-size:100% 4px; mix-blend-mode:overlay;"></div>
+
+    <!-- Sistema de Áudio -->
+    <audio id="typing-sound" preload="auto" style="display:none;"></audio>
+    <audio id="whisper-sound" preload="auto" style="display:none;"></audio>
+    <audio id="heartbeat-sound" preload="auto" style="display:none;" loop></audio>
+    <audio id="ambient-sound" preload="auto" style="display:none;" loop></audio>
+    <audio id="glitch-sound" preload="auto" style="display:none;"></audio>
+    <audio id="blood-drip-sound" preload="auto" style="display:none;"></audio>
     
-<div id="void-eye-container">
-    <img src="olhos da ganancia.png" id="void-eye">
-</div>
+    <div id="void-eye-container">
+        <img src="olhos da ganancia.png" id="void-eye" onerror="this.src='https://via.placeholder.com/320x320?text=OLHO'">
+    </div>
 
     <!-- Overlays -->
     <div class="corruption-overlay corruption-1"></div>
@@ -924,7 +957,9 @@ const achievementsList = {
     'Sobrevivente do Vazio': { description: 'Acompanhou a travessia de Seraph', unlocked: false },
     'Nova Gula': { description: 'Viu a ascensão do pecado da Gula', unlocked: false },
     'Mestre de Cerimônias': { description: 'Compreendeu o código de Abel', unlocked: false },
-    'Peso da Alma': { description: 'Absorveu a filosofia existencial de Abel', unlocked: false }
+    'Peso da Alma': { description: 'Absorveu a filosofia existencial de Abel', unlocked: false },
+    // Conquista do Orgulho
+    'O Primeiro Pecado': { description: 'Enfrentou o Orgulho, a morte que carrega tudo e todos', unlocked: false }
 };
 
 const mediaItems = {
@@ -1371,6 +1406,33 @@ function addLog(message, type = 'info') {
 }
 
 function updateStats() {
+    // Limitar sanidade entre 0 e 100
+    GameState.sanity = Math.max(0, Math.min(100, GameState.sanity));
+    
+    // Limitar corrupção entre 0 e 100
+    GameState.corruption = Math.max(0, Math.min(100, GameState.corruption));
+    
+    // Verificar se corrupção chegou a 100% (game over)
+    if (GameState.corruption >= 100) {
+        addLog('<span class="blood-red" style="font-size: 24px; font-weight: bold;">⚡ CORRUPÇÃO TOTAL ⚡</span>', 'error');
+        addLog('<span class="blood-red">Sua mente foi consumida pelo Abismo.</span>', 'error');
+        addLog('<span class="blood-red">Você perdeu tudo... O Olho da Ganância venceu.</span>', 'error');
+        
+        // Reset completo
+        GameState.sanity = 0;
+        GameState.corruption = 0;
+        GameState.progress = 0;
+        GameState.level = 1;
+        GameState.xp = 0;
+        GameState.achievements = new Set();
+        GameState.unlockedExperiments = new Set();
+        GameState.discoveredMedia = new Set();
+        GameState.visitedLocations = new Set();
+        
+        addLog('<span class="warning">[SISTEMA] Todos os dados foram corrompidos...</span>', 'warning');
+        addLog('<span class="info">Digite "help" para recomeçar sua jornada.</span>', 'info');
+    }
+    
     document.getElementById('sanity-bar').style.width = `${GameState.sanity}%`;
     document.getElementById('progress-bar').style.width = `${GameState.progress}%`;
     document.getElementById('corruption-bar').style.width = `${GameState.corruption}%`;
@@ -1992,7 +2054,6 @@ const commands = {
             addLog('pacto_cachorrinho   - O pacto e a humilhação final', 'blue');
             addLog('', 'info');
             
-            // ADICIONADO: Seção de Abel no comando help
             addLog('<span class="experiment-purple">ABEL DONQUIXOTE - A GULA 👑:</span>', 'experiment-purple');
             addLog('abel_origem        - A nobreza traída de Abel Donquixote', 'experiment-purple');
             addLog('abel_seraph        - A travessia com Seraph', 'experiment-purple');
@@ -2000,7 +2061,7 @@ const commands = {
             addLog('abel_pacto         - O pacto com Violet', 'experiment-purple');
             addLog('abel_filosofia     - A filosofia do peso e da realeza', 'experiment-purple');
             addLog('', 'info');
-            
+                        
             addLog('<span class="blue">COMANDOS BÁSICOS:</span>', 'info');
             addLog('help        - Mostrar esta ajuda', 'info');
             addLog('clear       - Limpar terminal', 'info');
@@ -2320,7 +2381,7 @@ ORIGEM: Desconhecida.`
             addLog('"Mas claro, tinha aqueles mesquinhos"', 'warning');
             addLog('"que insistiam que eu estava mentindo"', 'warning');
             addLog('"e que uma mulher não poderia fazer"', 'warning');
-            addLog('"quaisquer atos desses!"</span>', 'warning');
+            addLog('"quaisquer atos desses!"', 'warning');
             addLog('', 'info');
             
             addLog('<span class="luxury-purple">A ASCENSÃO:</span>', 'luxury-purple');
@@ -2441,7 +2502,7 @@ ORIGEM: Desconhecida.`
             addLog('"com a minha mãe."', 'luxury-purple');
             addLog('', 'luxury-purple');
             addLog('"Não entendi o que ela queria,"', 'luxury-purple');
-            addLog('"e muito menos o que veio fazer aqui."</span>', 'luxury-purple');
+            addLog('"e muito menos o que veio fazer aqui."', 'luxury-purple');
             addLog('"Só aceitei..."', 'luxury-purple');
             
             addLog('', 'info');
@@ -2965,7 +3026,6 @@ ORIGEM: Desconhecida.`
     },
     
     // ==================== ABEL DONQUIXOTE - A GULA ====================
-    // ADICIONADO: Comandos completos de Abel
     abel_origem: {
         description: 'A nobreza traída de Abel Donquixote',
         execute: () => {
@@ -3228,6 +3288,83 @@ ORIGEM: Desconhecida.`
             GameState.corruption += 10;
             updateStats();
         }
+    },
+
+    // ==================== ORGULHO - O PRIMEIRO PECADO ====================
+    orgulho: {
+        description: 'O Primeiro Pecado - A morte que carrega tudo',
+        execute: () => {
+            addLog('<span class="gold">=== ORGULHO - O PRIMEIRO PECADO ===</span>', 'info');
+            
+            addLog('<span class="blood-red" style="font-size: 18px; font-weight: bold;">⚠️  NÃO OLHE NOS OLHOS DELE  ⚠️</span>', 'error');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="luxury-purple">O PRIMEIRO ENTRE ELES:</span>', 'luxury-purple');
+            addLog('"Sempre sendo arrogante, foi o primeiro entre eles."', 'luxury-purple');
+            addLog('"O primeiro pecado que levou a iniciação de tudo."', 'luxury-purple');
+            addLog('"Ele trouxe a primeira morte."', 'luxury-purple');
+            addLog('"A primeira destruição de tudo..."', 'luxury-purple');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="blood-red">A DOENÇA QUE É MORTE:</span>', 'error');
+            addLog('"A doença remete a morte, mas a morte é ELE."', 'error');
+            addLog('"Ele sempre será a morte que carrega tudo e todos."', 'error');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="warning">O AVISO:</span>', 'warning');
+            addLog('"Não fale \'não\' a ele."', 'warning');
+            addLog('"Não entre no caminho dele."', 'warning');
+            addLog('"Por que o Orgulho vai até o final."', 'warning');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="gold" style="font-size: 20px; font-weight: bold;">👑 O PRIMEIRO. O ORGULHO. A MORTE.</span>', 'gold');
+            
+            addLog('', 'info');
+            addLog('<span class="blood-red" style="font-size: 24px; font-weight: bold;">⚡ NÃO OLHE NOS OLHOS DELE ⚡</span>', 'error');
+            
+            // Mostrar overlay do Orgulho
+            const orgulhoOverlay = document.getElementById('orgulhoOverlay');
+            if (orgulhoOverlay) {
+                orgulhoOverlay.style.display = 'flex';
+            }
+            
+            // Efeitos especiais para este comando poderoso
+            addXP(50);
+            unlockAchievement('O Primeiro Pecado');
+            
+            // Efeitos intensos de sanidade e corrupção
+            GameState.sanity -= 25;
+            GameState.corruption += 30;
+            updateStats();
+            
+            // Efeitos visuais
+            document.body.classList.add('shake');
+            setTimeout(() => document.body.classList.remove('shake'), 2000);
+            
+            const glitchOverlay = document.getElementById('glitch-overlay');
+            if (glitchOverlay) {
+                glitchOverlay.style.opacity = '0.5';
+                setTimeout(() => glitchOverlay.style.opacity = '0', 4000);
+            }
+            
+            // Piscar o olho do abismo várias vezes
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => {
+                    blinkEye();
+                }, i * 300);
+            }
+            
+            // Log especial
+            setTimeout(() => {
+                addLog('<span class="blood-red">[SISTEMA] Presença detectada: O PRIMEIRO PECADO</span>', 'error');
+                addLog('<span class="warning">[SISTEMA] Não olhe nos olhos dele...</span>', 'warning');
+                addLog('<span class="gold">[SISTEMA] O Orgulho observa você.</span>', 'gold');
+            }, 1500);
+        }
     }
 };
 
@@ -3253,633 +3390,669 @@ function changeGameMode(mode) {
         }
     });
     
- switch(mode) {
-    case 'story':
-        addLog('[MODO] Modo História ativado.', 'highlight');
-        startStoryMode();
-        break;
-    case 'investigation':
-        addLog('[MODO] Modo Investigação ativado.', 'highlight');
-        startInvestigationMode();
-        break;
-    case 'survival':
-        addLog('[MODO] Modo Sobrevivência ativado.', 'warning');
-        startSurvivalMode();
-        break;
-}
+    switch(mode) {
+        case 'story':
+            addLog('[MODO] Modo História ativado.', 'highlight');
+            startStoryMode();
+            break;
+        case 'investigation':
+            addLog('[MODO] Modo Investigação ativado.', 'highlight');
+            startInvestigationMode();
+            break;
+        case 'survival':
+            addLog('[MODO] Modo Sobrevivência ativado.', 'warning');
+            startSurvivalMode();
+            break;
+    }
 
-updateUI();
+    updateUI();
 }
 
 function startStoryMode() {
-if (GameState.progress === 0) {
-    setTimeout(() => {
-        addLog('[NARRATIVA] Sistema DIÁRIO DE BORDO v3.0 inicializado', 'blue');
-        addLog('[NARRATIVA] Acessando registros do Pesquisador...', 'blue');
-        addLog('[NARRATIVA] Use os comandos para explorar os experimentos.', 'info');
-        addLog('[SISTEMA] Conectando ao Arquivo do Olho da Ganância...', 'gold');
-        addLog('[SISTEMA] Use "list" para ver experimentos disponíveis', 'gold');
-        addLog('[SISTEMA] ⚠️  AVISO: Estes registros contêm experimentos extremos', 'warning');
-        addLog('[SISTEMA] ⚠️  Realizados sob influência do Olho da Ganância', 'warning');
-    }, 1000);
-}
+    if (GameState.progress === 0) {
+        setTimeout(() => {
+            addLog('[NARRATIVA] Sistema DIÁRIO DE BORDO v3.0 inicializado', 'blue');
+            addLog('[NARRATIVA] Acessando registros do Pesquisador...', 'blue');
+            addLog('[NARRATIVA] Use os comandos para explorar os experimentos.', 'info');
+            addLog('[SISTEMA] Conectando ao Arquivo do Olho da Ganância...', 'gold');
+            addLog('[SISTEMA] Use "list" para ver experimentos disponíveis', 'gold');
+            addLog('[SISTEMA] ⚠️  AVISO: Estes registros contêm experimentos extremos', 'warning');
+            addLog('[SISTEMA] ⚠️  Realizados sob influência do Olho da Ganância', 'warning');
+        }, 1000);
+    }
 }
 
 function startInvestigationMode() {
-setTimeout(() => {
-    addLog('[INVESTIGAÇÃO] Mistério #1: O que aconteceu com a Cobaia 7?', 'purple');
-    addLog('[INVESTIGAÇÃO] Mistério #2: Origem do Sculk', 'purple');
-    addLog('[INVESTIGAÇÃO] Use comandos: examine, analyze, connect', 'purple');
-}, 1000);
+    setTimeout(() => {
+        addLog('[INVESTIGAÇÃO] Mistério #1: O que aconteceu com a Cobaia 7?', 'purple');
+        addLog('[INVESTIGAÇÃO] Mistério #2: Origem do Sculk', 'purple');
+        addLog('[INVESTIGAÇÃO] Use comandos: examine, analyze, connect', 'purple');
+    }, 1000);
 }
 
 function startSurvivalMode() {
-const overlays = document.querySelectorAll('.corruption-overlay');
-overlays.forEach(overlay => {
-    overlay.style.opacity = '0.3';
-});
+    const overlays = document.querySelectorAll('.corruption-overlay');
+    overlays.forEach(overlay => {
+        overlay.style.opacity = '0.3';
+    });
 
-if (!GameState.corruptionInterval) {
-    GameState.corruptionInterval = setInterval(() => {
-        attemptCorruption();
-        
-        if (typeof VisualEffects !== 'undefined') {
-            if (Math.random() > 0.7) {
-                VisualEffects.playRandomWhisper();
+    if (!GameState.corruptionInterval) {
+        GameState.corruptionInterval = setInterval(() => {
+            attemptCorruption();
+            
+            if (typeof VisualEffects !== 'undefined') {
+                if (Math.random() > 0.7) {
+                    VisualEffects.playRandomWhisper();
+                }
+                if (Math.random() > 0.8) {
+                    VisualEffects.createBloodDrip();
+                }
             }
-            if (Math.random() > 0.8) {
-                VisualEffects.createBloodDrip();
-            }
-        }
-    }, 30000);
-}
+        }, 30000);
+    }
 }
 
 function attemptCorruption() {
-if (GameState.mode !== 'survival') return;
+    if (GameState.mode !== 'survival') return;
 
-const corruptionAttempts = [
-    () => {
-        addLog('[ABISMO] JUNTE-SE A NÓS... O CONHECIMENTO É ILIMITADO...', 'purple');
-        GameState.corruption += 5;
-        updateStats();
-    },
-    () => {
-        addLog('[VOZES] Por que se limitar à moralidade humana?', 'purple');
-        showPuzzle('corruption');
-    },
-    () => {
-        document.body.classList.add('shake');
-        setTimeout(() => document.body.classList.remove('shake'), 500);
-        addLog('[CORRUPÇÃO] O sistema treme... algo está tentando entrar.', 'warning');
-    }
-];
+    const corruptionAttempts = [
+        () => {
+            addLog('[ABISMO] JUNTE-SE A NÓS... O CONHECIMENTO É ILIMITADO...', 'purple');
+            GameState.corruption += 5;
+            updateStats();
+        },
+        () => {
+            addLog('[VOZES] Por que se limitar à moralidade humana?', 'purple');
+            showPuzzle('corruption');
+        },
+        () => {
+            document.body.classList.add('shake');
+            setTimeout(() => document.body.classList.remove('shake'), 500);
+            addLog('[CORRUPÇÃO] O sistema treme... algo está tentando entrar.', 'warning');
+        }
+    ];
 
-const attempt = corruptionAttempts[Math.floor(Math.random() * corruptionAttempts.length)];
-attempt();
+    const attempt = corruptionAttempts[Math.floor(Math.random() * corruptionAttempts.length)];
+    attempt();
 }
 
 // ==================== EFEITOS VISUAIS ====================
 const VisualEffects = {
-isGlitchActive: false,
-isBloodActive: false,
-eyesCount: 0,
-maxEyes: 15,
+    isGlitchActive: false,
+    isBloodActive: false,
+    eyesCount: 0,
+    maxEyes: 15,
 
-init() {
-    this.createEyes();
-    this.setupAudio();
-    this.startAmbientSounds();
-    this.applyBreathingEffect();
-    
-    setInterval(() => this.updateEffects(), 1000);
-},
+    init() {
+        this.createEyes();
+        this.setupAudio();
+        this.startAmbientSounds();
+        this.applyBreathingEffect();
+        
+        setInterval(() => this.updateEffects(), 1000);
+    },
 
-createEyes() {
-    const container = document.getElementById('eye-background');
-    if (!container) return;
-    
-    for (let i = 0; i < this.maxEyes; i++) {
-        setTimeout(() => {
-            const eye = document.createElement('div');
-            eye.className = 'eye';
-            
-            eye.style.left = `${Math.random() * 100}%`;
-            eye.style.top = `${Math.random() * 100}%`;
-            
-            const size = 20 + Math.random() * 40;
-            eye.style.width = `${size}px`;
-            eye.style.height = `${size}px`;
-            
-            eye.style.opacity = 0.1 + Math.random() * 0.3;
-            
-            container.appendChild(eye);
-            this.eyesCount++;
-        }, i * 500);
-    }
-},
-
-setupAudio() {
-    this.typingSounds = [
-        'https://assets.mixkit.co/sfx/preview/mixkit-fast-typing-on-typewriter-1116.mp3',
-        'https://assets.mixkit.co/sfx/preview/mixkit-hard-typewriter-click-1119.mp3',
-        'https://assets.mixkit.co/sfx/preview/mixkit-typewriter-click-1115.mp3'
-    ];        
-    this.heartbeatSound = 'https://assets.mixkit.co/sfx/preview/mixkit-single-heartbeat-493.mp3';
-    this.ambientSound = 'https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-ambience-353.mp3';
-    this.glitchSound = 'https://assets.mixkit.co/sfx/preview/mixkit-computer-glitch-2338.mp3';
-    this.bloodSound = 'https://assets.mixkit.co/sfx/preview/mixkit-water-drip-3000.mp3';
-    
-    this.whisperSounds = [
-        'https://assets.mixkit.co/sfx/preview/mixkit-male-voice-whisper-1136.mp3',
-        'https://assets.mixkit.co/sfx/preview/mixkit-female-voice-whisper-1137.mp3'
-    ];
-},
-
-startAmbientSounds() {
-    const ambient = document.getElementById('ambient-sound');
-    if (ambient) {
-        try {
-            ambient.src = this.ambientSound;
-            ambient.volume = 0.1;
-            ambient.play().catch(e => console.log('Audio autoplay blocked:', e));
-        } catch (e) {
-            console.log('Usando fallback de áudio');
+    createEyes() {
+        const container = document.getElementById('eye-background');
+        if (!container) return;
+        
+        for (let i = 0; i < this.maxEyes; i++) {
+            setTimeout(() => {
+                const eye = document.createElement('div');
+                eye.className = 'eye';
+                
+                eye.style.left = `${Math.random() * 100}%`;
+                eye.style.top = `${Math.random() * 100}%`;
+                
+                const size = 20 + Math.random() * 40;
+                eye.style.width = `${size}px`;
+                eye.style.height = `${size}px`;
+                
+                eye.style.opacity = 0.1 + Math.random() * 0.3;
+                
+                container.appendChild(eye);
+                this.eyesCount++;
+            }, i * 500);
         }
-    }
-},
+    },
 
-updateEffects() {
-    this.updateSanityEffects();
-    this.updateCorruptionEffects();
-    this.updateSurvivalEffects();
-},
+    setupAudio() {
+        this.typingSounds = [
+            'https://assets.mixkit.co/sfx/preview/mixkit-fast-typing-on-typewriter-1116.mp3',
+            'https://assets.mixkit.co/sfx/preview/mixkit-hard-typewriter-click-1119.mp3',
+            'https://assets.mixkit.co/sfx/preview/mixkit-typewriter-click-1115.mp3'
+        ];        
+        this.heartbeatSound = 'https://assets.mixkit.co/sfx/preview/mixkit-single-heartbeat-493.mp3';
+        this.ambientSound = 'https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-ambience-353.mp3';
+        this.glitchSound = 'https://assets.mixkit.co/sfx/preview/mixkit-computer-glitch-2338.mp3';
+        this.bloodSound = 'https://assets.mixkit.co/sfx/preview/mixkit-water-drip-3000.mp3';
+        
+        this.whisperSounds = [
+            'https://assets.mixkit.co/sfx/preview/mixkit-male-voice-whisper-1136.mp3',
+            'https://assets.mixkit.co/sfx/preview/mixkit-female-voice-whisper-1137.mp3'
+        ];
+    },
 
-updateSanityEffects() {
-    const sanity = GameState.sanity;
-    const eyeBg = document.getElementById('eye-background');
-    const glitchOverlay = document.getElementById('glitch-overlay');
-    
-    if (sanity < 50) {
-        const opacity = (50 - sanity) / 100;
-        if (eyeBg) eyeBg.style.opacity = Math.min(opacity, 0.5);
-        
-        if (sanity < 30 && glitchOverlay) {
-            glitchOverlay.style.opacity = (30 - sanity) / 50;
-        }
-        
-        if (sanity < 20 && !document.body.classList.contains('low-sanity-shake')) {
-            document.body.classList.add('low-sanity-shake');
-        }
-        
-        if (sanity < 40 && Math.random() > 0.7) {
-            this.applyRandomGlitch();
-        }
-    } else {
-        if (eyeBg) eyeBg.style.opacity = 0;
-        if (glitchOverlay) glitchOverlay.style.opacity = 0;
-        document.body.classList.remove('low-sanity-shake');
-    }
-},
-
-updateCorruptionEffects() {
-    const corruption = GameState.corruption;
-    
-    this.updateHeartbeat(corruption);
-    
-    if (corruption > 30 && Math.random() > 0.95) {
-        this.playRandomWhisper();
-    }
-    
-    if (corruption > 50) {
-        const elements = document.querySelectorAll('.tab, .mode-btn, .stat-item');
-        elements.forEach(el => {
-            if (!el.classList.contains('corruption-pulse') && Math.random() > 0.8) {
-                el.classList.add('corruption-pulse');
-                setTimeout(() => el.classList.remove('corruption-pulse'), 3000);
-            }
-        });
-    }
-},
-
-updateSurvivalEffects() {
-    if (GameState.mode === 'survival') {
-        if (!this.isBloodActive && Math.random() > 0.95) {
-            this.createBloodDrip();
-        }
-        
-        const survivalTime = GameState.commandHistory.length;
-        if (survivalTime > 50 && Math.random() > 0.98) {
-            this.playGlitchSound();
-        }
-    }
-},
-
-applyRandomGlitch() {
-    const logLines = document.querySelectorAll('.log-line');
-    if (logLines.length > 0) {
-        const randomLine = logLines[Math.floor(Math.random() * logLines.length)];
-        randomLine.classList.add('glitch-effect');
-        
-        this.playGlitchSound();
-        
-        setTimeout(() => {
-            randomLine.classList.remove('glitch-effect');
-        }, 500);
-    }
-},
-
-createBloodDrip() {
-    this.isBloodActive = true;
-    const container = document.getElementById('blood-container');
-    
-    for (let i = 0; i < 3; i++) {
-        const drip = document.createElement('div');
-        drip.className = 'blood-drip';
-        
-        const side = Math.floor(Math.random() * 4);
-        switch(side) {
-            case 0:
-                drip.style.left = `${Math.random() * 100}%`;
-                drip.style.top = '0';
-                break;
-            case 1:
-                drip.style.right = '0';
-                drip.style.top = `${Math.random() * 100}%`;
-                drip.style.transform = 'rotate(90deg)';
-                break;
-            case 2:
-                drip.style.left = `${Math.random() * 100}%`;
-                drip.style.bottom = '0';
-                drip.style.transform = 'rotate(180deg)';
-                break;
-            case 3:
-                drip.style.left = '0';
-                drip.style.top = `${Math.random() * 100}%`;
-                drip.style.transform = 'rotate(270deg)';
-                break;
-        }
-        
-        const red = 139 + Math.floor(Math.random() * 100);
-        drip.style.background = `linear-gradient(to bottom, 
-            transparent 0%, 
-            rgba(${red}, 0, 0, 0.8) 10%, 
-            rgba(139, 0, 0, 0.6) 30%, 
-            transparent 100%)`;
-        
-        container.appendChild(drip);
-        
-        this.playBloodDripSound();
-        
-        setTimeout(() => {
-            if (drip.parentNode === container) {
-                container.removeChild(drip);
-            }
-        }, 15000);
-    }
-    
-    setTimeout(() => {
-        this.isBloodActive = false;
-    }, 5000);
-},
-
-updateHeartbeat(corruption) {
-    const heartbeat = document.getElementById('heartbeat-sound');
-    if (!heartbeat) return;
-    
-    if (corruption > 20) {
-        if (heartbeat.paused) {
+    startAmbientSounds() {
+        const ambient = document.getElementById('ambient-sound');
+        if (ambient) {
             try {
-                heartbeat.src = this.heartbeatSound;
-                heartbeat.volume = 0.1 + (corruption / 100) * 0.3;
-                heartbeat.play().catch(e => console.log('Heartbeat audio error:', e));
+                ambient.src = this.ambientSound;
+                ambient.volume = 0.1;
+                ambient.play().catch(e => console.log('Audio autoplay blocked:', e));
             } catch (e) {
-                console.log('Heartbeat fallback');
+                console.log('Usando fallback de áudio');
             }
         }
-        
-        heartbeat.volume = 0.1 + (corruption / 100) * 0.4;
-        
-    } else {
-        heartbeat.pause();
-        heartbeat.currentTime = 0;
-    }
-},
+    },
 
-playTypingSound() {
-    if (Math.random() > 0.3) return;
-    
-    const typing = document.getElementById('typing-sound');
-    if (typing) {
-        const randomSound = this.typingSounds[Math.floor(Math.random() * this.typingSounds.length)];
-        try {
-            typing.src = randomSound;
-            typing.volume = 0.2;
-            typing.currentTime = 0;
-            typing.play().catch(e => console.log('Typing sound error'));
-        } catch (e) {
-        }
-    }
-},
+    updateEffects() {
+        this.updateSanityEffects();
+        this.updateCorruptionEffects();
+        this.updateSurvivalEffects();
+    },
 
-playRandomWhisper() {
-    const whisper = document.getElementById('whisper-sound');
-    if (whisper) {
-        const randomSound = this.whisperSounds[Math.floor(Math.random() * this.whisperSounds.length)];
-        try {
-            whisper.src = randomSound;
-            whisper.volume = 0.05 + (GameState.corruption / 100) * 0.1;
-            whisper.currentTime = 0;
-            whisper.play().catch(e => console.log('Whisper sound error'));
+    updateSanityEffects() {
+        const sanity = GameState.sanity;
+        const eyeBg = document.getElementById('eye-background');
+        const glitchOverlay = document.getElementById('glitch-overlay');
+        
+        if (sanity < 50) {
+            const opacity = (50 - sanity) / 100;
+            if (eyeBg) eyeBg.style.opacity = Math.min(opacity, 0.5);
             
-            this.showWhisperEffect();
-        } catch (e) {
+            if (sanity < 30 && glitchOverlay) {
+                glitchOverlay.style.opacity = (30 - sanity) / 50;
+            }
+            
+            if (sanity < 20 && !document.body.classList.contains('low-sanity-shake')) {
+                document.body.classList.add('low-sanity-shake');
+            }
+            
+            if (sanity < 40 && Math.random() > 0.7) {
+                this.applyRandomGlitch();
+            }
+        } else {
+            if (eyeBg) eyeBg.style.opacity = 0;
+            if (glitchOverlay) glitchOverlay.style.opacity = 0;
+            document.body.classList.remove('low-sanity-shake');
+        }
+    },
+
+    updateCorruptionEffects() {
+        const corruption = GameState.corruption;
+        
+        this.updateHeartbeat(corruption);
+        
+        if (corruption > 30 && Math.random() > 0.95) {
+            this.playRandomWhisper();
+        }
+        
+        if (corruption > 50) {
+            const elements = document.querySelectorAll('.tab, .mode-btn, .stat-item');
+            elements.forEach(el => {
+                if (!el.classList.contains('corruption-pulse') && Math.random() > 0.8) {
+                    el.classList.add('corruption-pulse');
+                    setTimeout(() => el.classList.remove('corruption-pulse'), 3000);
+                }
+            });
+        }
+    },
+
+    updateSurvivalEffects() {
+        if (GameState.mode === 'survival') {
+            if (!this.isBloodActive && Math.random() > 0.95) {
+                this.createBloodDrip();
+            }
+            
+            const survivalTime = GameState.commandHistory.length;
+            if (survivalTime > 50 && Math.random() > 0.98) {
+                this.playGlitchSound();
+            }
+        }
+    },
+
+    applyRandomGlitch() {
+        const logLines = document.querySelectorAll('.log-line');
+        if (logLines.length > 0) {
+            const randomLine = logLines[Math.floor(Math.random() * logLines.length)];
+            randomLine.classList.add('glitch-effect');
+            
+            this.playGlitchSound();
+            
+            setTimeout(() => {
+                randomLine.classList.remove('glitch-effect');
+            }, 500);
+        }
+    },
+
+    createBloodDrip() {
+        this.isBloodActive = true;
+        const container = document.getElementById('blood-container');
+        
+        for (let i = 0; i < 3; i++) {
+            const drip = document.createElement('div');
+            drip.className = 'blood-drip';
+            
+            const side = Math.floor(Math.random() * 4);
+            switch(side) {
+                case 0:
+                    drip.style.left = `${Math.random() * 100}%`;
+                    drip.style.top = '0';
+                    break;
+                case 1:
+                    drip.style.right = '0';
+                    drip.style.top = `${Math.random() * 100}%`;
+                    drip.style.transform = 'rotate(90deg)';
+                    break;
+                case 2:
+                    drip.style.left = `${Math.random() * 100}%`;
+                    drip.style.bottom = '0';
+                    drip.style.transform = 'rotate(180deg)';
+                    break;
+                case 3:
+                    drip.style.left = '0';
+                    drip.style.top = `${Math.random() * 100}%`;
+                    drip.style.transform = 'rotate(270deg)';
+                    break;
+            }
+            
+            const red = 139 + Math.floor(Math.random() * 100);
+            drip.style.background = `linear-gradient(to bottom, 
+                transparent 0%, 
+                rgba(${red}, 0, 0, 0.8) 10%, 
+                rgba(139, 0, 0, 0.6) 30%, 
+                transparent 100%)`;
+            
+            container.appendChild(drip);
+            
+            this.playBloodDripSound();
+            
+            setTimeout(() => {
+                if (drip.parentNode === container) {
+                    container.removeChild(drip);
+                }
+            }, 15000);
+        }
+        
+        setTimeout(() => {
+            this.isBloodActive = false;
+        }, 5000);
+    },
+
+    updateHeartbeat(corruption) {
+        const heartbeat = document.getElementById('heartbeat-sound');
+        if (!heartbeat) return;
+        
+        if (corruption > 20) {
+            if (heartbeat.paused) {
+                try {
+                    heartbeat.src = this.heartbeatSound;
+                    heartbeat.volume = 0.1 + (corruption / 100) * 0.3;
+                    heartbeat.play().catch(e => console.log('Heartbeat audio error:', e));
+                } catch (e) {
+                    console.log('Heartbeat fallback');
+                }
+            }
+            
+            heartbeat.volume = 0.1 + (corruption / 100) * 0.4;
+            
+        } else {
+            heartbeat.pause();
+            heartbeat.currentTime = 0;
+        }
+    },
+
+    playTypingSound() {
+        if (Math.random() > 0.3) return;
+        
+        const typing = document.getElementById('typing-sound');
+        if (typing) {
+            const randomSound = this.typingSounds[Math.floor(Math.random() * this.typingSounds.length)];
+            try {
+                typing.src = randomSound;
+                typing.volume = 0.2;
+                typing.currentTime = 0;
+                typing.play().catch(e => console.log('Typing sound error'));
+            } catch (e) {
+            }
+        }
+    },
+
+    playRandomWhisper() {
+        const whisper = document.getElementById('whisper-sound');
+        if (whisper) {
+            const randomSound = this.whisperSounds[Math.floor(Math.random() * this.whisperSounds.length)];
+            try {
+                whisper.src = randomSound;
+                whisper.volume = 0.05 + (GameState.corruption / 100) * 0.1;
+                whisper.currentTime = 0;
+                whisper.play().catch(e => console.log('Whisper sound error'));
+                
+                this.showWhisperEffect();
+            } catch (e) {
+            }
+        }
+    },
+
+    showWhisperEffect() {
+        const whisperText = document.createElement('div');
+        whisperText.style.position = 'fixed';
+        whisperText.style.left = `${10 + Math.random() * 80}%`;
+        whisperText.style.top = `${10 + Math.random() * 80}%`;
+        whisperText.style.color = 'rgba(160, 66, 255, 0.7)';
+        whisperText.style.fontSize = '14px';
+        whisperText.style.fontFamily = 'Consolas, monospace';
+        whisperText.style.pointerEvents = 'none';
+        whisperText.style.zIndex = '10000';
+        whisperText.style.textShadow = '0 0 10px rgba(160, 66, 255, 0.5)';
+        whisperText.style.opacity = '0';
+        
+        const whispers = [
+            'Junte-se a nós...',
+            'O conhecimento é dor...',
+            'Você está sozinho...',
+            'O Olho observa...',
+            'Corrompa-se...',
+            'A verdade machuca...',
+            'Abra seus olhos...',
+            'Não resista...',
+            'Seja um com o Abismo...',
+            'A ganância é virtude...'
+        ];
+        
+        whisperText.textContent = whispers[Math.floor(Math.random() * whispers.length)];
+        document.body.appendChild(whisperText);
+        
+        whisperText.animate([
+            { opacity: 0, transform: 'translateY(10px)' },
+            { opacity: 0.8, transform: 'translateY(0)' },
+            { opacity: 0, transform: 'translateY(-10px)' }
+        ], {
+            duration: 3000,
+            easing: 'ease-in-out'
+        });
+        
+        setTimeout(() => {
+            if (whisperText.parentNode) {
+                whisperText.parentNode.removeChild(whisperText);
+            }
+        }, 3000);
+    },
+
+    playGlitchSound() {
+        const glitch = document.getElementById('glitch-sound');
+        if (glitch && Math.random() > 0.5) {
+            try {
+                glitch.src = this.glitchSound;
+                glitch.volume = 0.3;
+                glitch.currentTime = 0;
+                glitch.play().catch(e => console.log('Glitch sound error'));
+            } catch (e) {
+            }
+        }
+    },
+
+    playBloodDripSound() {
+        const blood = document.getElementById('blood-drip-sound');
+        if (blood) {
+            try {
+                blood.src = this.bloodSound;
+                blood.volume = 0.2;
+                blood.currentTime = 0;
+                blood.play().catch(e => console.log('Blood drip sound error'));
+            } catch (e) {
+            }
+        }
+    },
+
+    applyBreathingEffect() {
+        const prompt = document.querySelector('.prompt');
+        if (prompt && !prompt.classList.contains('breathing-text')) {
+            prompt.classList.add('breathing-text');
+        }
+        
+        const logs = document.querySelectorAll('.log-line');
+        if (logs.length > 0 && Math.random() > 0.8) {
+            const randomLog = logs[Math.floor(Math.random() * logs.length)];
+            randomLog.classList.add('breathing-text');
+            setTimeout(() => randomLog.classList.remove('breathing-text'), 8000);
         }
     }
-},
-
-showWhisperEffect() {
-    const whisperText = document.createElement('div');
-    whisperText.style.position = 'fixed';
-    whisperText.style.left = `${10 + Math.random() * 80}%`;
-    whisperText.style.top = `${10 + Math.random() * 80}%`;
-    whisperText.style.color = 'rgba(160, 66, 255, 0.7)';
-    whisperText.style.fontSize = '14px';
-    whisperText.style.fontFamily = 'Consolas, monospace';
-    whisperText.style.pointerEvents = 'none';
-    whisperText.style.zIndex = '10000';
-    whisperText.style.textShadow = '0 0 10px rgba(160, 66, 255, 0.5)';
-    whisperText.style.opacity = '0';
-    
-    const whispers = [
-        'Junte-se a nós...',
-        'O conhecimento é dor...',
-        'Você está sozinho...',
-        'O Olho observa...',
-        'Corrompa-se...',
-        'A verdade machuca...',
-        'Abra seus olhos...',
-        'Não resista...',
-        'Seja um com o Abismo...',
-        'A ganância é virtude...'
-    ];
-    
-    whisperText.textContent = whispers[Math.floor(Math.random() * whispers.length)];
-    document.body.appendChild(whisperText);
-    
-    whisperText.animate([
-        { opacity: 0, transform: 'translateY(10px)' },
-        { opacity: 0.8, transform: 'translateY(0)' },
-        { opacity: 0, transform: 'translateY(-10px)' }
-    ], {
-        duration: 3000,
-        easing: 'ease-in-out'
-    });
-    
-    setTimeout(() => {
-        if (whisperText.parentNode) {
-            whisperText.parentNode.removeChild(whisperText);
-        }
-    }, 3000);
-},
-
-playGlitchSound() {
-    const glitch = document.getElementById('glitch-sound');
-    if (glitch && Math.random() > 0.5) {
-        try {
-            glitch.src = this.glitchSound;
-            glitch.volume = 0.3;
-            glitch.currentTime = 0;
-            glitch.play().catch(e => console.log('Glitch sound error'));
-        } catch (e) {
-        }
-    }
-},
-
-playBloodDripSound() {
-    const blood = document.getElementById('blood-drip-sound');
-    if (blood) {
-        try {
-            blood.src = this.bloodSound;
-            blood.volume = 0.2;
-            blood.currentTime = 0;
-            blood.play().catch(e => console.log('Blood drip sound error'));
-        } catch (e) {
-        }
-    }
-},
-
-applyBreathingEffect() {
-    const prompt = document.querySelector('.prompt');
-    if (prompt && !prompt.classList.contains('breathing-text')) {
-        prompt.classList.add('breathing-text');
-    }
-    
-    const logs = document.querySelectorAll('.log-line');
-    if (logs.length > 0 && Math.random() > 0.8) {
-        const randomLog = logs[Math.floor(Math.random() * logs.length)];
-        randomLog.classList.add('breathing-text');
-        setTimeout(() => randomLog.classList.remove('breathing-text'), 8000);
-    }
-}
 };
 
 // ==================== INICIALIZAÇÃO ====================
 function init() {
-console.log("Sistema iniciando...");
+    console.log("Sistema iniciando...");
 
-loadSave();
+    // Garantir que o input esteja focado
+    setTimeout(() => {
+        document.getElementById('command-input').focus();
+    }, 100);
 
-const input = document.getElementById('command-input');
-const prompt = document.getElementById('prompt');
+    loadSave();
 
-updateMediaGrid();
-updateMap();
+    const input = document.getElementById('command-input');
+    const prompt = document.getElementById('prompt');
 
-VisualEffects.init();
+    updateMediaGrid();
+    updateMap();
 
-setTimeout(() => {
-    addLog('DIÁRIO DE BORDO v3.0 - SISTEMA INICIALIZADO', 'highlight');
-    addLog('Digite "help" para ver os comandos disponíveis', 'info');
-    
-    if (GameState.commandHistory.length === 0) {
-        unlockAchievement('Primeiro Acesso');
-    }
-}, 500);
+    VisualEffects.init();
 
-input.addEventListener('keydown', (e) => {
-    if (e.key.length === 1 || e.key === 'Backspace' || e.key === 'Enter') {
-        VisualEffects.playTypingSound();
-    }
-    
-    if (e.key === 'Enter') {
-        const commandText = input.value.trim();
-        if (commandText) {
-            GameState.commandHistory.push(commandText);
+    setTimeout(() => {
+        addLog('DIÁRIO DE BORDO v3.0 - SISTEMA INICIALIZADO', 'highlight');
+        addLog('Digite "help" para ver os comandos disponíveis', 'info');
+        
+        if (GameState.commandHistory.length === 0) {
+            unlockAchievement('Primeiro Acesso');
+        }
+    }, 500);
+
+    // Configurar evento de input
+    input.addEventListener('keydown', function(e) {
+        // Permitir digitação normalmente
+        e.stopPropagation();
+        
+        // Sons de digitação
+        if (e.key.length === 1 || e.key === 'Backspace') {
+            VisualEffects.playTypingSound();
+        }
+        
+        // Processar Enter
+        if (e.key === 'Enter') {
+            e.preventDefault();
             
-            prompt.textContent = `pesquisador@${GameState.mode}:~$`;
-            addLog(`<span class="prompt">pesquisador@${GameState.mode}:~$</span> ${commandText}`, 'info');
-            
-            const parts = commandText.split(' ');
-            const cmd = parts[0].toLowerCase();
-            const args = parts.slice(1);
-            
-            if (commands[cmd]) {
-                commands[cmd].execute(args);
+            const commandText = input.value.trim();
+            if (commandText) {
+                GameState.commandHistory.push(commandText);
                 
-                // Verificar conquistas específicas após comandos
-                if (cmd.startsWith('grimm_')) {
-                    checkGrimmAchievements();
-                } else if (cmd.startsWith('abel_')) {
-                    checkAbelAchievements();
-                } else if (cmd.startsWith('mira_')) {
-                    checkMiraAchievements();
-                } else if (cmd.startsWith('violet') || cmd.startsWith('bazar') || cmd.startsWith('crescimento') || cmd.startsWith('escola') || cmd.startsWith('maturidade')) {
-                    checkVioletAchievements();
-                } else if (cmd.startsWith('preguiça') || cmd.startsWith('hypnos') || cmd.startsWith('violet_hypnos') || cmd.startsWith('treinamento') || cmd.startsWith('abandono') || cmd.startsWith('desespero')) {
-                    checkHypnosAchievements();
+                prompt.textContent = `pesquisador@${GameState.mode}:~$`;
+                addLog(`<span class="prompt">pesquisador@${GameState.mode}:~$</span> ${commandText}`, 'info');
+                
+                const parts = commandText.split(' ');
+                const cmd = parts[0].toLowerCase();
+                const args = parts.slice(1);
+                
+                if (commands[cmd]) {
+                    commands[cmd].execute(args);
+                    
+                    // Verificar conquistas específicas após comandos
+                    if (cmd.startsWith('grimm_')) {
+                        checkGrimmAchievements();
+                    } else if (cmd.startsWith('abel_')) {
+                        checkAbelAchievements();
+                    } else if (cmd.startsWith('mira_')) {
+                        checkMiraAchievements();
+                    } else if (['violet', 'bazar', 'crescimento', 'escola', 'maturidade'].includes(cmd)) {
+                        checkVioletAchievements();
+                    } else if (['preguiça', 'hypnos_rotina', 'violet_hypnos', 'treinamento', 'abandono', 'desespero'].includes(cmd)) {
+                        checkHypnosAchievements();
+                    }
+                } else {
+                    addLog(`Comando não encontrado: ${cmd}`, 'error');
+                    addLog('Digite "help" para ajuda', 'info');
                 }
-            } else {
-                addLog(`Comando não encontrado: ${cmd}`, 'error');
-                addLog('Digite "help" para ajuda', 'info');
+                
+                input.value = '';
+                updateUI();
             }
             
-            input.value = '';
-            updateUI();
+            // Manter foco
+            setTimeout(() => input.focus(), 10);
         }
-    } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        if (GameState.commandHistory.length > 0) {
-            if (GameState.historyIndex === undefined) {
-                GameState.historyIndex = GameState.commandHistory.length - 1;
-            } else {
-                GameState.historyIndex = Math.max(0, GameState.historyIndex - 1);
-            }
-            input.value = GameState.commandHistory[GameState.historyIndex];
-        }
-    } else if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        if (GameState.historyIndex !== undefined) {
-            if (GameState.historyIndex >= GameState.commandHistory.length - 1) {
-                GameState.historyIndex = undefined;
-                input.value = '';
-            } else {
-                GameState.historyIndex++;
+        
+        // Navegação no histórico
+        else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (GameState.commandHistory.length > 0) {
+                if (GameState.historyIndex === undefined) {
+                    GameState.historyIndex = GameState.commandHistory.length - 1;
+                } else {
+                    GameState.historyIndex = Math.max(0, GameState.historyIndex - 1);
+                }
                 input.value = GameState.commandHistory[GameState.historyIndex];
             }
         }
-    }
-});
-
-input.focus();
-
-const placeholders = [
-    'Digite "list" para ver experimentos...',
-    'Tente "access EXPERIMENTO047"...',
-    'Use "access EXPERIMENTO184" para infecções...',
-    'Acesse "EXPERIMENTO201" para projeto gestação...',
-    'Digite "help" para todos os comandos...',
-    'Digite "preguiça" para saber sobre Hypnos...',
-    'Use "abandono" para história triste de Hypnos...',
-    'Tente "desespero" para o final da história...',
-    'Digite "treinamento" para saber sobre a arma...',
-    'Use "grimm_fera" para conhecer a fera primordial...',
-    'Tente "multile_pantera_completo" para ascensão canibal...',
-    'Digite "pacto_cachorrinho" para o momento icônico...',
-    'Explore "encontro_violet" para o confronto com Violet...',
-    'Digite "mira_origem" para conhecer a história sombria...',
-    'Digite "abel_origem" para o banquete do exílio...',
-    'Use "abel_gula" para a ascensão do Novo Gula...',
-    'Tente "abel_filosofia" para compreender o peso da alma...',
-    'Explore "abel_pacto" para o pacto com Violet...',
-    'Conheça "abel_seraph" e a travessia da fada...'
-];
-
-let phIndex = 0;
-let typing = true;
-let phText = '';
-
-function typePlaceholder() {
-    if (typing) {
-        if (phText.length < placeholders[phIndex].length) {
-            phText += placeholders[phIndex][phText.length];
-            input.placeholder = phText;
-            setTimeout(typePlaceholder, 50);
-        } else {
-            typing = false;
-            setTimeout(typePlaceholder, 2000);
+        else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (GameState.historyIndex !== undefined) {
+                if (GameState.historyIndex >= GameState.commandHistory.length - 1) {
+                    GameState.historyIndex = undefined;
+                    input.value = '';
+                } else {
+                    GameState.historyIndex++;
+                    input.value = GameState.commandHistory[GameState.historyIndex];
+                }
+            }
         }
-    } else {
-        if (phText.length > 0) {
-            phText = phText.slice(0, -1);
-            input.placeholder = phText;
-            setTimeout(typePlaceholder, 30);
+    });
+
+    // Impedir que F5 recarregue a página
+    window.addEventListener('keydown', function(e) {
+        if (e.key === 'F5' || (e.ctrlKey && e.key === 'r')) {
+            e.preventDefault();
+            addLog('[SISTEMA] Recarregar página desativado para preservar progresso.', 'warning');
+            return false;
+        }
+    });
+
+    input.focus();
+
+    const placeholders = [
+        'Digite "list" para ver experimentos...',
+        'Tente "access EXPERIMENTO047"...',
+        'Use "access EXPERIMENTO184" para infecções...',
+        'Digite "help" para todos os comandos...',
+        'Digite "preguiça" para saber sobre Hypnos...',
+        'Use "abandono" para história triste de Hypnos...',
+        'Tente "desespero" para o final da história...',
+        'Digite "treinamento" para saber sobre a arma...',
+        'Use "grimm_fera" para conhecer a fera primordial...',
+        'Tente "multile_pantera_completo" para ascensão canibal...',
+        'Explore "encontro_violet" para o confronto com Violet...',
+        'Digite "mira_origem" para conhecer a história sombria...',
+        'Digite "abel_origem" para o banquete do exílio...',
+        'Use "abel_gula" para a ascensão do Novo Gula...',
+        'Tente "abel_filosofia" para compreender o peso da alma...',
+        'Explore "abel_pacto" para o pacto com Violet...',
+        'Conheça "abel_seraph" e a travessia da fada...',
+    ];
+
+    let phIndex = 0;
+    let typing = true;
+    let phText = '';
+
+    function typePlaceholder() {
+        if (typing) {
+            if (phText.length < placeholders[phIndex].length) {
+                phText += placeholders[phIndex][phText.length];
+                input.placeholder = phText;
+                setTimeout(typePlaceholder, 50);
+            } else {
+                typing = false;
+                setTimeout(typePlaceholder, 2000);
+            }
         } else {
-            typing = true;
-            phIndex = (phIndex + 1) % placeholders.length;
-            setTimeout(typePlaceholder, 500);
+            if (phText.length > 0) {
+                phText = phText.slice(0, -1);
+                input.placeholder = phText;
+                setTimeout(typePlaceholder, 30);
+            } else {
+                typing = true;
+                phIndex = (phIndex + 1) % placeholders.length;
+                setTimeout(typePlaceholder, 500);
+            }
         }
     }
-}
 
-typePlaceholder();
+    typePlaceholder();
 
-setInterval(autoSave, 60000);
+    setInterval(autoSave, 60000);
 
-setInterval(() => {
-    if (Math.random() > 0.6) {
-        blinkEye();
-    }
-}, 3000 + Math.random() * 4000);
+    setInterval(() => {
+        if (Math.random() > 0.6) {
+            blinkEye();
+        }
+    }, 3000 + Math.random() * 4000);
 }
 
 // Função para verificar conquistas de Abel
 function checkAbelAchievements() {
-let abelCommandsUsed = 0;
-const abelCommands = ['abel_origem', 'abel_seraph', 'abel_gula', 'abel_pacto', 'abel_filosofia'];
+    let abelCommandsUsed = 0;
+    const abelCommands = ['abel_origem', 'abel_seraph', 'abel_gula', 'abel_pacto', 'abel_filosofia'];
 
-GameState.commandHistory.forEach(cmd => {
-    const baseCmd = cmd.split(' ')[0].toLowerCase();
-    if (abelCommands.includes(baseCmd)) {
-        abelCommandsUsed++;
+    GameState.commandHistory.forEach(cmd => {
+        const baseCmd = cmd.split(' ')[0].toLowerCase();
+        if (abelCommands.includes(baseCmd)) {
+            abelCommandsUsed++;
+        }
+    });
+
+    if (abelCommandsUsed >= 1 && !GameState.achievements.has('Príncipe do Banquete')) {
+        unlockAchievement('Príncipe do Banquete');
     }
-});
-
-if (abelCommandsUsed >= 1 && !GameState.achievements.has('Príncipe do Banquete')) {
-    unlockAchievement('Príncipe do Banquete');
-}
-if (abelCommandsUsed >= 2 && !GameState.achievements.has('Patricida Nobre')) {
-    unlockAchievement('Patricida Nobre');
-}
-if (abelCommandsUsed >= 3 && !GameState.achievements.has('Sobrevivente do Vazio')) {
-    unlockAchievement('Sobrevivente do Vazio');
-}
-if (abelCommandsUsed >= 4 && !GameState.achievements.has('Nova Gula')) {
-    unlockAchievement('Nova Gula');
-}
-if (abelCommandsUsed >= 5 && !GameState.achievements.has('Mestre de Cerimônias')) {
-    unlockAchievement('Mestre de Cerimônias');
-    unlockAchievement('Peso da Alma');
-}
+    if (abelCommandsUsed >= 2 && !GameState.achievements.has('Patricida Nobre')) {
+        unlockAchievement('Patricida Nobre');
+    }
+    if (abelCommandsUsed >= 3 && !GameState.achievements.has('Sobrevivente do Vazio')) {
+        unlockAchievement('Sobrevivente do Vazio');
+    }
+    if (abelCommandsUsed >= 4 && !GameState.achievements.has('Nova Gula')) {
+        unlockAchievement('Nova Gula');
+    }
+    if (abelCommandsUsed >= 5 && !GameState.achievements.has('Mestre de Cerimônias')) {
+        unlockAchievement('Mestre de Cerimônias');
+        unlockAchievement('Peso da Alma');
+    }
 }
 
 // Função para verificar conquistas de Mira
 function checkMiraAchievements() {
-let miraCommandsUsed = 0;
-const miraCommands = ['mira_origem'];
+    let miraCommandsUsed = 0;
+    const miraCommands = ['mira_origem'];
 
-GameState.commandHistory.forEach(cmd => {
-    const baseCmd = cmd.split(' ')[0].toLowerCase();
-    if (miraCommands.includes(baseCmd)) {
-        miraCommandsUsed++;
+    GameState.commandHistory.forEach(cmd => {
+        const baseCmd = cmd.split(' ')[0].toLowerCase();
+        if (miraCommands.includes(baseCmd)) {
+            miraCommandsUsed++;
+        }
+    });
+
+    if (miraCommandsUsed >= 1 && !GameState.achievements.has('Última dos Castello')) {
+        unlockAchievement('Última dos Castello');
+    }
+}
+
+// Configurar overlay do Orgulho para fechar ao clicar
+document.addEventListener('DOMContentLoaded', function() {
+    const orgulhoOverlay = document.getElementById('orgulhoOverlay');
+    if (orgulhoOverlay) {
+        orgulhoOverlay.addEventListener('click', function() {
+            this.style.display = 'none';
+        });
     }
 });
-
-if (miraCommandsUsed >= 1 && !GameState.achievements.has('Última dos Castello')) {
-    unlockAchievement('Última dos Castello');
-}
-}
-
 
 window.addEventListener('DOMContentLoaded', init);
 </script>
