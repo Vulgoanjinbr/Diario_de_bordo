@@ -1972,7 +1972,7 @@ function blinkEye() {
     }, 120);
 }
 
-// ==================== FUNÇÕES DE ACHIEVEMENTS ====================
+// ==================== FUNÇÕES DE ACHIEVEMENTS CORRIGIDAS ====================
 
 // Função para verificar conquistas de Violet
 function checkVioletAchievements() {
@@ -2199,6 +2199,15 @@ const commands = {
             
             addLog('<span class="experiment-purple">PESQUISADOR - A GANÂNCIA 🔬:</span>', 'experiment-purple');
             addLog('pesquisador     - A história do criador de Ushka', 'experiment-purple');
+            addLog('', 'info');
+            
+            addLog('<span class="gold">REFLEXÕES DE ABEL 👑:</span>', 'gold');
+            addLog('rainha_potencial   - Os pensamentos de Abel sobre Mira', 'gold');
+            addLog('gênio_desperdiçado - Os pensamentos de Abel sobre Kurobane', 'gold');
+            addLog('relíquia_intocada  - Os pensamentos de Abel sobre Hypnos', 'gold');
+            addLog('besta_sem_etiqueta - Os pensamentos de Abel sobre Grimm', 'gold');
+            addLog('imperatriz         - Os pensamentos de Abel sobre Violet', 'gold');
+            addLog('rei_detestável     - Os pensamentos de Abel sobre o Orgulho', 'gold');
             addLog('', 'info');
             
             addLog('<span class="blue">RECUPERAÇÃO:</span>', 'info');
@@ -3295,6 +3304,114 @@ ORIGEM: Desconhecida.`
         }
     },
 
+    // ==================== REFLEXÕES DE ABEL ====================
+    rainha_potencial: {
+        description: 'Os pensamentos de Abel sobre Mira',
+        execute: () => {
+            addLog('<span class="gold">=== A RAINHA EM POTENCIAL ===</span>', 'info');
+            addLog('<span class="luxury-purple">"Minha dupla, a única que traz algum alento estético a este grupo. Gosto do jeito dela de agir e entendo perfeitamente o seu ponto de vista; nossos fios se entrelaçam em uma harmonia rara."</span>', 'luxury-purple');
+            addLog('', 'info');
+            addLog('<span class="warning">"Mas ela me frustra. Mira possui a substância de uma Imperatriz, mas se recusa a ocupar o espaço que é dela por direito."</span>', 'warning');
+            addLog('', 'info');
+            addLog('<span class="gold">"Eu a cobro constantemente: \'Você precisa posar mais, Mira. Reivindique o ambiente.\' Ela deveria agir como a rainha que seu poder sugere, impondo sua presença em vez de apenas ser uma ferramenta do destino."</span>', 'gold');
+            addLog('', 'info');
+            addLog('<span class="luxury-purple">"Ela tem o sabor da realeza, só precisa aprender a exibi-lo com a devida pompa."</span>', 'luxury-purple');
+            addXP(20);
+            GameState.corruption += 5;
+            updateStats();
+        }
+    },
+
+    gênio_desperdiçado: {
+        description: 'Os pensamentos de Abel sobre Kurobane',
+        execute: () => {
+            addLog('<span class="gold">=== O GÊNIO DESPERDIÇADO ===</span>', 'info');
+            addLog('<span class="luxury-purple">"Um gênio que escolheu ser um carniceiro. Kurobane tem as mãos sujas de um tipo de sangue que não traz honra, apenas curiosidade mórbida."</span>', 'luxury-purple');
+            addLog('', 'info');
+            addLog('<span class="warning">"Ele desperdiça sua inteligência em experimentos desumanos que não constroem reinos, apenas cemitérios de vísceras."</span>', 'warning');
+            addLog('', 'info');
+            addLog('<span class="gold">"Ele tem o poder para ser um rei, mas prefere agir como um cientista sem limites e sem classe. Sua obsessão pelo grotesco me enoja; falta-lhe a moldura que a etiqueta e o poder exigem."</span>', 'gold');
+            addLog('', 'info');
+            addLog('<span class="luxury-purple">"Um homem com a mente dele deveria estar redesenhando as leis da realidade para sentar-se em um trono, não brincando com restos mortais como um plebeu curioso."</span>', 'luxury-purple');
+            addXP(20);
+            GameState.corruption += 5;
+            updateStats();
+        }
+    },
+
+    relíquia_intocada: {
+        description: 'Os pensamentos de Abel sobre Hypnos',
+        execute: () => {
+            addLog('<span class="gold">=== A RELÍQUIA INTOCADA ===</span>', 'info');
+            addLog('<span class="luxury-purple">"Há algo de quase puro nele. Aos meus olhos, Hyppnos ainda carrega a aura de uma criança, e como você sabe, eu não toco e não permito que toquem no que ainda não foi contaminado pela mediocridade do mundo."</span>', 'luxury-purple');
+            addLog('', 'info');
+            addLog('<span class="warning">"Gosto dele. Ele é o único nesta mesa que não me causa náuseas com ambições barulhentas; ele apenas existe em seu próprio sonho."</span>', 'warning');
+            addLog('', 'info');
+            addLog('<span class="gold">"Eu o protejo com o olhar, como se fosse um vaso de porcelana precioso em meio a um campo de batalha. Nele, vejo a leveza que é permitida — a leveza da inocência, não a covardia que meu pai chamava de nobreza."</span>', 'gold');
+            addXP(20);
+            GameState.sanity += 10;
+            updateStats();
+        }
+    },
+
+    besta_sem_etiqueta: {
+        description: 'Os pensamentos de Abel sobre Grimm',
+        execute: () => {
+            addLog('<span class="gold">=== BESTA SEM ETIQUETA ===</span>', 'info');
+            addLog('<span class="luxury-purple">"Grim... é apenas ruído. Não sinto ódio por ele, sinto uma indiferença profunda."</span>', 'luxury-purple');
+            addLog('', 'info');
+            addLog('<span class="warning">"Ele é animalesco demais, instintivo demais. Para alguém como eu, que busca a sofisticação do controle e o peso do legado, observar Grim é como ver um animal selvagem devorando carne crua no chão de um palácio de mármore."</span>', 'warning');
+            addLog('', 'info');
+            addLog('<span class="gold">"Ele não entende de fios, de sutileza ou de etiqueta; ele entende apenas de dentes e fúria. Ele não tem a substância necessária para se sentar à mesa, é apenas um predador menor seguindo o cheiro de sangue."</span>', 'gold');
+            addXP(20);
+            GameState.corruption += 8;
+            updateStats();
+        }
+    },
+
+    imperatriz: {
+        description: 'Os pensamentos de Abel sobre Violet',
+        execute: () => {
+            addLog('<span class="gold">=== A SOBERANA DO DIREITO ===</span>', 'info');
+            addLog('<span class="luxury-purple">"Respeito-a porque ela possui as qualidades que definem um verdadeiro governante. Violet não precisa de uma coroa de ouro para que eu a veja; ela exala a autoridade que meu pai jogou fora como se fosse lixo."</span>', 'luxury-purple');
+            addLog('', 'info');
+            addLog('<span class="warning">"Ela foi quem me tirou do vazio e me prometeu o trono, e ela cumpre o que diz. Ela recruta, ela comanda, ela age."</span>', 'warning');
+            addLog('', 'info');
+            addLog('<span class="gold">"Em um mundo de plebeus fingindo ser deuses, ela é a única que se comporta como uma Rainha por direito. Ela é o prato principal deste banquete; sem o seu comando e sua substância, os outros seriam apenas restos esquecidos em uma mesa suja."</span>', 'gold');
+            addXP(25);
+            GameState.sanity += 5;
+            updateStats();
+        }
+    },
+
+    rei_detestável: {
+        description: 'Os pensamentos de Abel sobre o Orgulho',
+        execute: () => {
+            addLog('<span class="gold">=== O REI DETESTÁVEL ===</span>', 'info');
+            addLog('<span class="luxury-purple">"Eu o desprezo com cada fibra do meu ser. O Orgulho é barulhento, cego e sufocante... um prato excessivamente temperado que agride o paladar de qualquer um com refinamento."</span>', 'luxury-purple');
+            addLog('', 'info');
+            addLog('<span class="warning">"Sua arrogância não é uma escolha, é um rugido ensurdecedor que tenta abafar o mundo ao redor. No entanto... há um peso inegável em seus ombros."</span>', 'warning');
+            addLog('', 'info');
+            addLog('<span class="gold">"Ele se move como se o mundo fosse seu estrado, e esse porte de rei é a única razão pela qual eu ainda não cortei seus fios. Ele possui a gravidade de um verdadeiro monarca, alguém que não pede permissão para existir, mas exige vassalagem."</span>', 'gold');
+            addLog('', 'info');
+            addLog('<span class="luxury-purple">"É um ódio reverencial; eu o mataria com prazer, mas apenas se pudesse herdar sua coroa intacta. Ele é o soberano que eu odeio respeitar, pois ele é o espelho do que eu deveria ser, mas sem a sua vulgaridade."</span>', 'luxury-purple');
+            addXP(30);
+            GameState.sanity -= 15;
+            GameState.corruption += 15;
+            updateStats();
+            
+            // Mostrar overlay do Orgulho
+            const orgulhoOverlay = document.getElementById('orgulhoOverlay');
+            if (orgulhoOverlay) {
+                orgulhoOverlay.style.display = 'flex';
+            }
+            
+            // Efeito visual
+            document.body.classList.add('shake');
+            setTimeout(() => document.body.classList.remove('shake'), 1000);
+        }
+    },
+
     // ==================== PESQUISADOR - GANÂNCIA ====================
     pesquisador: {
         description: 'A história do pesquisador que criou Ushka',
@@ -4235,7 +4352,7 @@ function init() {
                     if (cmd === 'help' || cmd === 'clear' || cmd === 'status' || cmd === 'backup' || cmd === 'stats' || cmd === 'achievements' || cmd === 'decrypt') {
                         checkCommandAchievements();
                     }
-                    if (cmd === 'access' || cmd === 'list') {
+                    if (cmd === 'access') {
                         checkExperimentAchievements();
                     }
                     if (cmd === 'media') {
@@ -4244,21 +4361,25 @@ function init() {
                     if (cmd === 'map') {
                         checkLocationAchievements();
                     }
+                    
+                    // Verificações por prefixo ou lista
                     if (cmd.startsWith('grimm_')) {
                         checkGrimmAchievements();
                     } 
-                    if (cmd.startsWith('abel_')) {
+                    else if (cmd.startsWith('abel_')) {
                         checkAbelAchievements();
                     } 
-                    if (cmd.startsWith('mira_')) {
+                    else if (cmd.startsWith('mira_')) {
                         checkMiraAchievements();
                     } 
-                    if (['violet', 'bazar', 'crescimento', 'escola', 'maturidade'].includes(cmd)) {
+                    else if (['violet', 'bazar', 'crescimento', 'escola', 'maturidade'].includes(cmd)) {
                         checkVioletAchievements();
                     } 
-                    if (['preguiça', 'hypnos_rotina', 'violet_hypnos', 'treinamento', 'abandono', 'desespero'].includes(cmd)) {
+                    else if (['preguiça', 'hypnos_rotina', 'violet_hypnos', 'treinamento', 'abandono', 'desespero'].includes(cmd)) {
                         checkHypnosAchievements();
                     }
+                    
+                    // Conquistas únicas
                     if (cmd === 'orgulho') {
                         unlockAchievement('O Primeiro Pecado');
                     }
@@ -4335,7 +4456,13 @@ function init() {
         'Conheça "abel_seraph" e a travessia da fada...',
         'Use "meditar" para recuperar sanidade (risco)',
         'Tente "purificar" para reduzir corrupção (risco)',
-        'Use "analyze sculk" para analisar dados'
+        'Use "analyze sculk" para analisar dados',
+        'Descubra "rainha_potencial" - reflexões de Abel',
+        'Descubra "gênio_desperdiçado" - sobre Kurobane',
+        'Descubra "relíquia_intocada" - sobre Hypnos',
+        'Descubra "besta_sem_etiqueta" - sobre Grimm',
+        'Descubra "imperatriz" - sobre Violet',
+        'Descubra "rei_detestável" - sobre o Orgulho'
     ];
 
     let phIndex = 0;
@@ -4374,53 +4501,6 @@ function init() {
             blinkEye();
         }
     }, 3000 + Math.random() * 4000);
-}
-
-// Função para verificar conquistas de Abel
-function checkAbelAchievements() {
-    let abelCommandsUsed = 0;
-    const abelCommands = ['abel_origem', 'abel_seraph', 'abel_gula', 'abel_pacto', 'abel_filosofia'];
-
-    GameState.commandHistory.forEach(cmd => {
-        const baseCmd = cmd.split(' ')[0].toLowerCase();
-        if (abelCommands.includes(baseCmd)) {
-            abelCommandsUsed++;
-        }
-    });
-
-    if (abelCommandsUsed >= 1 && !GameState.achievements.has('Príncipe do Banquete')) {
-        unlockAchievement('Príncipe do Banquete');
-    }
-    if (abelCommandsUsed >= 2 && !GameState.achievements.has('Patricida Nobre')) {
-        unlockAchievement('Patricida Nobre');
-    }
-    if (abelCommandsUsed >= 3 && !GameState.achievements.has('Sobrevivente do Vazio')) {
-        unlockAchievement('Sobrevivente do Vazio');
-    }
-    if (abelCommandsUsed >= 4 && !GameState.achievements.has('Nova Gula')) {
-        unlockAchievement('Nova Gula');
-    }
-    if (abelCommandsUsed >= 5 && !GameState.achievements.has('Mestre de Cerimônias')) {
-        unlockAchievement('Mestre de Cerimônias');
-        unlockAchievement('Peso da Alma');
-    }
-}
-
-// Função para verificar conquistas de Mira
-function checkMiraAchievements() {
-    let miraCommandsUsed = 0;
-    const miraCommands = ['mira_origem'];
-
-    GameState.commandHistory.forEach(cmd => {
-        const baseCmd = cmd.split(' ')[0].toLowerCase();
-        if (miraCommands.includes(baseCmd)) {
-            miraCommandsUsed++;
-        }
-    });
-
-    if (miraCommandsUsed >= 1 && !GameState.achievements.has('Última dos Castello')) {
-        unlockAchievement('Última dos Castello');
-    }
 }
 
 // Configurar overlay do Orgulho para fechar ao clicar
