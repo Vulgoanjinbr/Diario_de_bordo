@@ -1412,6 +1412,27 @@ function updateStats() {
     // Limitar corrupção entre 0 e 100
     GameState.corruption = Math.max(0, Math.min(100, GameState.corruption));
     
+    // Verificar se sanidade chegou a 0% (game over)
+    if (GameState.sanity <= 0) {
+        addLog('<span class="blood-red" style="font-size: 24px; font-weight: bold;">⚡ SUA MENTE SE FRAGMENTOU ⚡</span>', 'error');
+        addLog('<span class="blood-red">Você perdeu toda a sanidade...</span>', 'error');
+        addLog('<span class="blood-red">O Abismo consumiu sua consciência.</span>', 'error');
+        
+        // Reset completo
+        GameState.sanity = 80;
+        GameState.corruption = 10;
+        GameState.progress = 0;
+        GameState.level = 1;
+        GameState.xp = 0;
+        GameState.achievements = new Set();
+        GameState.unlockedExperiments = new Set();
+        GameState.discoveredMedia = new Set();
+        GameState.visitedLocations = new Set();
+        
+        addLog('<span class="warning">[SISTEMA] Sua jornada recomeça...</span>', 'warning');
+        addLog('<span class="info">Digite "help" para começar novamente.</span>', 'info');
+    }
+    
     // Verificar se corrupção chegou a 100% (game over)
     if (GameState.corruption >= 100) {
         addLog('<span class="blood-red" style="font-size: 24px; font-weight: bold;">⚡ CORRUPÇÃO TOTAL ⚡</span>', 'error');
@@ -1419,8 +1440,8 @@ function updateStats() {
         addLog('<span class="blood-red">Você perdeu tudo... O Olho da Ganância venceu.</span>', 'error');
         
         // Reset completo
-        GameState.sanity = 0;
-        GameState.corruption = 0;
+        GameState.sanity = 80;
+        GameState.corruption = 10;
         GameState.progress = 0;
         GameState.level = 1;
         GameState.xp = 0;
@@ -1739,7 +1760,7 @@ function showExperiment(experiment) {
         unlockAchievement('Observador do Abismo');
     }
     
-    if (corruptedCount >= 6 && !GameState.achievements.has('Mestre da Ganância')) {
+    if (corruptedCount >= 7 && !GameState.achievements.has('Mestre da Ganância')) {
         unlockAchievement('Mestre da Ganância');
     }
 }
@@ -1951,6 +1972,9 @@ function blinkEye() {
     }, 120);
 }
 
+// ==================== FUNÇÕES DE ACHIEVEMENTS ====================
+
+// Função para verificar conquistas de Violet
 function checkVioletAchievements() {
     let violetCommandsUsed = 0;
     const violetCommands = ['violet', 'bazar', 'crescimento', 'escola', 'maturidade'];
@@ -1962,15 +1986,18 @@ function checkVioletAchievements() {
         }
     });
     
-    if (violetCommandsUsed >= 3 && !GameState.achievements.has('Herdeira do Bazar')) {
+    if (violetCommandsUsed >= 1 && !GameState.achievements.has('Herdeira do Bazar')) {
         unlockAchievement('Herdeira do Bazar');
     }
-    if (violetCommandsUsed >= 5 && !GameState.achievements.has('Mestra da Persuasão')) {
+    if (violetCommandsUsed >= 3 && !GameState.achievements.has('Mestra da Persuasão')) {
         unlockAchievement('Mestra da Persuasão');
+    }
+    if (violetCommandsUsed >= 5 && !GameState.achievements.has('Conhecedora de Tarot')) {
+        unlockAchievement('Conhecedora de Tarot');
     }
 }
 
-// ==================== FUNÇÕES DE ACHIEVEMENTS DO HYPNOS ====================
+// Função para verificar conquistas de Hypnos
 function checkHypnosAchievements() {
     let hypnosCommandsUsed = 0;
     const hypnosCommands = ['preguiça', 'hypnos_rotina', 'violet_hypnos', 'treinamento', 'abandono', 'desespero'];
@@ -1982,13 +2009,13 @@ function checkHypnosAchievements() {
         }
     });
     
-    if (hypnosCommandsUsed >= 3 && !GameState.achievements.has('Observador do Sono')) {
+    if (hypnosCommandsUsed >= 1 && !GameState.achievements.has('Observador do Sono')) {
         unlockAchievement('Observador do Sono');
     }
-    if (hypnosCommandsUsed >= 4 && !GameState.achievements.has('Colecionador Secreto')) {
+    if (hypnosCommandsUsed >= 2 && !GameState.achievements.has('Colecionador Secreto')) {
         unlockAchievement('Colecionador Secreto');
     }
-    if (hypnosCommandsUsed >= 5 && !GameState.achievements.has('Abandono Traumático')) {
+    if (hypnosCommandsUsed >= 4 && !GameState.achievements.has('Abandono Traumático')) {
         unlockAchievement('Abandono Traumático');
     }
     if (hypnosCommandsUsed >= 6 && !GameState.achievements.has('Testemunha do Desespero')) {
@@ -1996,7 +2023,7 @@ function checkHypnosAchievements() {
     }
 }
 
-// ==================== FUNÇÕES DE ACHIEVEMENTS DO GRIMM ====================
+// Função para verificar conquistas de Grimm
 function checkGrimmAchievements() {
     let grimmCommandsUsed = 0;
     const grimmCommands = ['grimm_fera', 'grimm_corte', 'multile_pantera_completo', 'encontro_violet', 'pacto_cachorrinho'];
@@ -2008,8 +2035,112 @@ function checkGrimmAchievements() {
         }
     });
     
+    if (grimmCommandsUsed >= 1 && !GameState.achievements.has('Fera Primordial')) {
+        unlockAchievement('Fera Primordial');
+    }
+    if (grimmCommandsUsed >= 2 && !GameState.achievements.has('Rei Devorador')) {
+        unlockAchievement('Rei Devorador');
+    }
+    if (grimmCommandsUsed >= 3 && !GameState.achievements.has('Encontro do Abismo')) {
+        unlockAchievement('Encontro do Abismo');
+    }
+    if (grimmCommandsUsed >= 4 && !GameState.achievements.has('Cachorro Domado')) {
+        unlockAchievement('Cachorro Domado');
+    }
     if (grimmCommandsUsed >= 5 && !GameState.achievements.has('Conhecedor da Besta')) {
         unlockAchievement('Conhecedor da Besta');
+    }
+}
+
+// Função para verificar conquistas de Abel
+function checkAbelAchievements() {
+    let abelCommandsUsed = 0;
+    const abelCommands = ['abel_origem', 'abel_seraph', 'abel_gula', 'abel_pacto', 'abel_filosofia'];
+
+    GameState.commandHistory.forEach(cmd => {
+        const baseCmd = cmd.split(' ')[0].toLowerCase();
+        if (abelCommands.includes(baseCmd)) {
+            abelCommandsUsed++;
+        }
+    });
+
+    if (abelCommandsUsed >= 1 && !GameState.achievements.has('Príncipe do Banquete')) {
+        unlockAchievement('Príncipe do Banquete');
+    }
+    if (abelCommandsUsed >= 1 && !GameState.achievements.has('Patricida Nobre')) {
+        unlockAchievement('Patricida Nobre');
+    }
+    if (abelCommandsUsed >= 2 && !GameState.achievements.has('Sobrevivente do Vazio')) {
+        unlockAchievement('Sobrevivente do Vazio');
+    }
+    if (abelCommandsUsed >= 3 && !GameState.achievements.has('Nova Gula')) {
+        unlockAchievement('Nova Gula');
+    }
+    if (abelCommandsUsed >= 4 && !GameState.achievements.has('Mestre de Cerimônias')) {
+        unlockAchievement('Mestre de Cerimônias');
+    }
+    if (abelCommandsUsed >= 5 && !GameState.achievements.has('Peso da Alma')) {
+        unlockAchievement('Peso da Alma');
+    }
+}
+
+// Função para verificar conquistas de Mira
+function checkMiraAchievements() {
+    let miraCommandsUsed = 0;
+    const miraCommands = ['mira_origem'];
+
+    GameState.commandHistory.forEach(cmd => {
+        const baseCmd = cmd.split(' ')[0].toLowerCase();
+        if (miraCommands.includes(baseCmd)) {
+            miraCommandsUsed++;
+        }
+    });
+
+    if (miraCommandsUsed >= 1 && !GameState.achievements.has('Última dos Castello')) {
+        unlockAchievement('Última dos Castello');
+    }
+}
+
+// Função para verificar conquistas de experimentos
+function checkExperimentAchievements() {
+    const corruptedCount = GameState.unlockedExperiments.size;
+    
+    if (corruptedCount >= 2 && !GameState.achievements.has('Pesquisador Iniciante')) {
+        unlockAchievement('Pesquisador Iniciante');
+    }
+    if (corruptedCount >= 3 && !GameState.achievements.has('Observador do Abismo')) {
+        unlockAchievement('Observador do Abismo');
+    }
+    if (corruptedCount >= 7 && !GameState.achievements.has('Mestre da Ganância')) {
+        unlockAchievement('Mestre da Ganância');
+    }
+}
+
+// Função para verificar conquistas de mídia
+function checkMediaAchievements() {
+    const mediaCount = GameState.discoveredMedia.size;
+    const totalMedia = Object.keys(mediaItems).length;
+    
+    if (mediaCount >= totalMedia && !GameState.achievements.has('Arquivista')) {
+        unlockAchievement('Arquivista');
+    }
+}
+
+// Função para verificar conquistas de locais
+function checkLocationAchievements() {
+    const locationCount = GameState.visitedLocations.size;
+    
+    if (locationCount >= 8 && !GameState.achievements.has('Explorador')) {
+        unlockAchievement('Explorador');
+    }
+}
+
+// Função para verificar conquistas de comandos
+function checkCommandAchievements() {
+    const uniqueCommands = new Set(GameState.commandHistory.map(cmd => cmd.split(' ')[0].toLowerCase()));
+    
+    if (uniqueCommands.size >= 15 && !GameState.achievements.has('Mestre do Terminal')) {
+        unlockAchievement('Mestre do Terminal');
     }
 }
 
@@ -2061,7 +2192,25 @@ const commands = {
             addLog('abel_pacto         - O pacto com Violet', 'experiment-purple');
             addLog('abel_filosofia     - A filosofia do peso e da realeza', 'experiment-purple');
             addLog('', 'info');
-                        
+            
+            addLog('<span class="blood-red">ORGULHO - O PRIMEIRO PECADO 👑:</span>', 'error');
+            addLog('orgulho         - O Primeiro Pecado - A morte que carrega tudo', 'error');
+            addLog('', 'info');
+            
+            addLog('<span class="experiment-purple">PESQUISADOR - A GANÂNCIA 🔬:</span>', 'experiment-purple');
+            addLog('pesquisador     - A história do criador de Ushka', 'experiment-purple');
+            addLog('', 'info');
+            
+            addLog('<span class="blue">RECUPERAÇÃO:</span>', 'info');
+            addLog('meditar        - Tentar recuperar sanidade (70% chance)', 'info');
+            addLog('purificar      - Tentar reduzir corrupção (60% chance)', 'info');
+            addLog('', 'info');
+            
+            addLog('<span class="blue">INVESTIGAÇÃO:</span>', 'info');
+            addLog('analyze [dados] - Analisar dados (sculk, ushka, experimentos)', 'info');
+            addLog('connect [conexão] - Conectar pontos (sculk_ushka, violet_abismo, ganância_exp)', 'info');
+            addLog('', 'info');
+            
             addLog('<span class="blue">COMANDOS BÁSICOS:</span>', 'info');
             addLog('help        - Mostrar esta ajuda', 'info');
             addLog('clear       - Limpar terminal', 'info');
@@ -2073,12 +2222,6 @@ const commands = {
             addLog('search [termo] - Buscar em registros', 'info');
             addLog('media       - Listar mídias disponíveis', 'info');
             addLog('map         - Mostrar mapa do laboratório', 'info');
-            addLog('', 'info');
-            
-            addLog('<span class="blue">INVESTIGAÇÃO:</span>', 'info');
-            addLog('examine [item] - Examinar item detalhadamente', 'info');
-            addLog('analyze [dados] - Analisar dados encontrados', 'info');
-            addLog('connect [conexão] - Conectar pontos da investigação', 'info');
             addLog('', 'info');
             
             addLog('<span class="blue">ROLEPLAY:</span>', 'info');
@@ -3025,6 +3168,217 @@ ORIGEM: Desconhecida.`
         }
     },
     
+    // ==================== COMANDOS DE RECUPERAÇÃO ====================
+    meditar: {
+        description: 'Meditar para recuperar sanidade',
+        execute: () => {
+            // 70% chance de sucesso
+            const success = Math.random() < 0.7;
+            
+            if (success) {
+                const recovery = Math.floor(Math.random() * 15) + 10; // 10-25
+                GameState.sanity = Math.min(100, GameState.sanity + recovery);
+                addLog(`<span class="blue">[MEDITAÇÃO]</span> Sua mente se acalmou. Você recuperou ${recovery} de sanidade.`, 'blue');
+            } else {
+                const loss = Math.floor(Math.random() * 10) + 5; // 5-15
+                GameState.sanity = Math.max(0, GameState.sanity - loss);
+                addLog(`<span class="warning">[MEDITAÇÃO]</span> Você não consegue se concentrar. Pensamentos intrusivos tomam conta... Perdeu ${loss} de sanidade.`, 'warning');
+            }
+            updateStats();
+        }
+    },
+
+    purificar: {
+        description: 'Tentar purificar a corrupção',
+        execute: () => {
+            if (GameState.corruption <= 0) {
+                addLog('[PURIFICAR] Você já está puro.', 'info');
+                return;
+            }
+            
+            // 60% chance de sucesso
+            const success = Math.random() < 0.6;
+            
+            if (success) {
+                const reduction = Math.floor(Math.random() * 10) + 5; // 5-15
+                GameState.corruption = Math.max(0, GameState.corruption - reduction);
+                addLog(`<span class="purple">[PURIFICAR]</span> Você conseguiu afastar as influências do Abismo. Corrupção reduzida em ${reduction}.`, 'purple');
+            } else {
+                const increase = Math.floor(Math.random() * 10) + 5; // 5-15
+                GameState.corruption = Math.min(100, GameState.corruption + increase);
+                addLog(`<span class="blood-red">[PURIFICAR]</span> O ritual falhou. O Abismo se aproveitou do seu momento de fraqueza. Corrupção aumentou em ${increase}.`, 'error');
+            }
+            updateStats();
+        }
+    },
+
+    // ==================== COMANDOS DE INVESTIGAÇÃO ====================
+    analyze: {
+        description: 'Analisar dados e experimentos',
+        execute: (args) => {
+            if (!args[0]) {
+                addLog('Uso: analyze [dados]', 'error');
+                addLog('Dados disponíveis: sculk, ushka, experimentos', 'info');
+                return;
+            }
+            
+            const data = args[0].toLowerCase();
+            
+            if (data === 'sculk') {
+                addLog('<span class="purple">[ANÁLISE - SCULK]</span>', 'purple');
+                addLog('A infecção sculk parece ter consciência própria.', 'info');
+                addLog('Ela não apenas infecta, mas também modifica e "melhora" o hospedeiro.', 'info');
+                addLog('Capaz de fagocitar outras infecções e criar simbiose.', 'info');
+                addLog('<span class="warning">ORIGEM: Desconhecida, possivelmente ligada ao Abismo.</span>', 'warning');
+                addXP(10);
+            } 
+            else if (data === 'ushka') {
+                addLog('<span class="purple">[ANÁLISE - USHKA]</span>', 'purple');
+                addLog('Criação do Dr. Kurobane Marte, EXP-089-U.', 'info');
+                addLog('Amálgama de múltiplos felinos com consciência humana transferida.', 'info');
+                addLog('Memórias humanas causam conflito psicológico.', 'info');
+                addLog('<span class="gold">Status: Funcional, em aprimoramento contínuo.</span>', 'gold');
+                addXP(10);
+            }
+            else if (data === 'experimentos') {
+                addLog('<span class="purple">[ANÁLISE - EXPERIMENTOS]</span>', 'purple');
+                addLog('Total de experimentos: ' + Object.keys(experiments).length, 'info');
+                addLog('Desbloqueados: ' + GameState.unlockedExperiments.size, 'info');
+                addLog('Experimentos corrompidos pelo Olho da Ganância: 7', 'info');
+                addLog('<span class="warning">A maioria envolve dor, sofrimento e modificação corporal.</span>', 'warning');
+                addXP(10);
+            }
+            else {
+                addLog(`Dados não reconhecidos: ${data}`, 'error');
+            }
+        }
+    },
+
+    connect: {
+        description: 'Conectar pontos da investigação',
+        execute: (args) => {
+            if (!args[0]) {
+                addLog('Uso: connect [conexão]', 'error');
+                addLog('Conexões disponíveis: sculk_ushka, violet_abismo, ganância_exp', 'info');
+                return;
+            }
+            
+            const connection = args[0].toLowerCase();
+            
+            if (connection === 'sculk_ushka') {
+                addLog('<span class="purple">[CONEXÃO: SCULK x USHKA]</span>', 'purple');
+                addLog('O sculk foi fundamental na criação de Ushka.', 'info');
+                addLog('O Dr. Kurobane usou a infecção para fundir partes felinas e humanas.', 'info');
+                addLog('<span class="gold">O sculk permite a "fusão" de espécies diferentes.</span>', 'gold');
+                addLog('<span class="warning">Isso explica como Ushka pode existir.</span>', 'warning');
+                addXP(15);
+            }
+            else if (connection === 'violet_abismo') {
+                addLog('<span class="purple">[CONEXÃO: VIOLET x ABISMO]</span>', 'purple');
+                addLog('Violet é líder do culto Herdeiros do Abismo.', 'info');
+                addLog('Ela recruta os pecados: Inveja (Mira), Gula (Abel), Orgulho.', 'info');
+                addLog('<span class="gold">O Abismo concede poder em troca de serviço.</span>', 'gold');
+                addLog('Violet parece ter um plano maior...', 'warning');
+                addXP(15);
+            }
+            else if (connection === 'ganância_exp') {
+                addLog('<span class="purple">[CONEXÃO: GANÂNCIA x EXPERIMENTOS]</span>', 'purple');
+                addLog('O Olho da Ganância influenciou todos os experimentos.', 'info');
+                addLog('O pesquisador buscava criar vida, manipular a morte.', 'info');
+                addLog('<span class="gold">A ganância por conhecimento justificou todos os meios.</span>', 'gold');
+                addLog('Ushka é o resultado mais próximo do "sucesso".', 'warning');
+                addXP(15);
+            }
+            else {
+                addLog(`Conexão não reconhecida: ${connection}`, 'error');
+            }
+        }
+    },
+
+    // ==================== PESQUISADOR - GANÂNCIA ====================
+    pesquisador: {
+        description: 'A história do pesquisador que criou Ushka',
+        execute: () => {
+            addLog('<span class="gold">=== O PESQUISADOR - A GÊNESE DA GANÂNCIA ===</span>', 'info');
+            
+            addLog('<span class="luxury-purple">A INFÂNCIA EXEMPLAR:</span>', 'luxury-purple');
+            addLog('"Fui uma criança exemplar, dotada de inteligência e de claro senso entre o certo e o errado."', 'luxury-purple');
+            addLog('"Desde cedo meu intelecto fora tão extraordinário que muitos ainda me invejam hoje."', 'luxury-purple');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="warning">A FAMÍLIA DEVOTA:</span>', 'warning');
+            addLog('"Minha família era completamente devota dos Laudatus (seguidores de Dux, o deus da vida)."', 'warning');
+            addLog('"Ensinaram-me a adorá-lo, a seguir seus preceitos… mas para quê, se eu mesmo poderia ser meu próprio deus?"', 'warning');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="blood-red">AS PESQUISAS SECRETAS:</span>', 'error');
+            addLog('"Enquanto crescia, realizei pesquisas secretas: dissecava pequenos pássaros, esquilos e outros animais."', 'error');
+            addLog('"Aprendia como funcionavam, como percebiam o mundo e até conseguia prever seus movimentos ao manipular nervos."', 'error');
+            addLog('"Não me contentei em apenas dissecá-los: testei quanto tempo sobreviveriam sem certos órgãos."', 'error');
+            addLog('"Naquele processo, sentia-me um criador, um deus emergente."', 'error');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="experiment-purple">A DESCOBERTA:</span>', 'purple');
+            addLog('"Meus pais reagiram com horror quando descobriram o cachorro de casa anestesiado e aberto no quintal."', 'purple');
+            addLog('"Acusaram-me de demônio, tentaram me expulsar e me levaram a uma igreja para exorcismo."', 'purple');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="blood-red" style="font-size: 16px;">O PATRICÍDIO CIENTÍFICO:</span>', 'error');
+            addLog('"Mas eu sempre quis experimentar em corpos humanos, e meus próprios pais foram minhas primeiras cobaias."', 'error');
+            addLog('"Realizei um arriscado teste de fusão: tentei unir dois corpos, criando gêmeos siameses."', 'error');
+            addLog('"O resultado foi parcial e os dois não sobreviveram além de dois dias."', 'error');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="gold">A SEDE DE CONHECIMENTO:</span>', 'gold');
+            addLog('"Aquela experiência só aumentou minha sede de conhecimento: queria submeter humanos a todo tipo de substância."', 'gold');
+            addLog('"Descobrir a dose exata de veneno que um corpo aguenta antes de falhar."', 'gold');
+            addLog('"Com o tempo, obtive respostas."', 'gold');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="blue">O LABORATÓRIO ISOLADO:</span>', 'blue');
+            addLog('"Parti em viagem pelo mundo em busca de novas cobaias e experimentos até encontrar um lugar remoto."', 'blue');
+            addLog('"Um local isolado do mundo exterior, que transformei num laboratório, meu refúgio onde nada me atrapalha."', 'blue');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="experiment-purple">O ENCONTRO COM O ABISMO:</span>', 'purple');
+            addLog('"Lá, iniciei estudos sobre uma infecção sombria, esverdeada, chamada sculk."', 'purple');
+            addLog('"No começo da pesquisa, cruzei com um indivíduo curioso: Carmesim."', 'purple');
+            addLog('"Ele me convidou para um culto do Abismo, lendas que meus pais sempre contaram junto às histórias de Dux."', 'purple');
+            addLog('"Pouco me importava o objetivo do Abismo; juntei-me ao grupo apenas porque queria investigar aquela infecção que vi em seu corpo."', 'purple');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="gold">A CRIAÇÃO DE USHKA:</span>', 'gold');
+            addLog('"Desde o primeiro contato, soube que o sculk me permitiria gerar vida."', 'gold');
+            addLog('"Passei semanas, quase meses testando-o em cobaias animais e humanas."', 'gold');
+            addLog('"Não atingi ainda um resultado 100% humano, mas criei Ushka: um ser formado por partes felinas e humanas."', 'gold');
+            addLog('"Até agora, é meu melhor experimento com o sculk."', 'gold');
+            
+            addLog('', 'info');
+            
+            addLog('<span class="luxury-purple">O LEGADO:</span>', 'luxury-purple');
+            addLog('"Embora Ushka ainda não alcance meu padrão ideal, ela é prova do que posso criar."', 'luxury-purple');
+            addLog('"Vou mantê-la e aprimorá-la até alcançar algo ainda maior."', 'luxury-purple');
+            
+            addLog('', 'info');
+            addLog('<span class="blood-red">=== DR. KUROBANE MARTE - O ARQUITETO DA GANÂNCIA ===</span>', 'error');
+            
+            addXP(40);
+            unlockAchievement('Arquitetor da Vida');
+            
+            GameState.corruption += 15;
+            GameState.sanity -= 10;
+            updateStats();
+        }
+    },
+    
     // ==================== ABEL DONQUIXOTE - A GULA ====================
     abel_origem: {
         description: 'A nobreza traída de Abel Donquixote',
@@ -3878,16 +4232,38 @@ function init() {
                     commands[cmd].execute(args);
                     
                     // Verificar conquistas específicas após comandos
+                    if (cmd === 'help' || cmd === 'clear' || cmd === 'status' || cmd === 'backup' || cmd === 'stats' || cmd === 'achievements' || cmd === 'decrypt') {
+                        checkCommandAchievements();
+                    }
+                    if (cmd === 'access' || cmd === 'list') {
+                        checkExperimentAchievements();
+                    }
+                    if (cmd === 'media') {
+                        checkMediaAchievements();
+                    }
+                    if (cmd === 'map') {
+                        checkLocationAchievements();
+                    }
                     if (cmd.startsWith('grimm_')) {
                         checkGrimmAchievements();
-                    } else if (cmd.startsWith('abel_')) {
+                    } 
+                    if (cmd.startsWith('abel_')) {
                         checkAbelAchievements();
-                    } else if (cmd.startsWith('mira_')) {
+                    } 
+                    if (cmd.startsWith('mira_')) {
                         checkMiraAchievements();
-                    } else if (['violet', 'bazar', 'crescimento', 'escola', 'maturidade'].includes(cmd)) {
+                    } 
+                    if (['violet', 'bazar', 'crescimento', 'escola', 'maturidade'].includes(cmd)) {
                         checkVioletAchievements();
-                    } else if (['preguiça', 'hypnos_rotina', 'violet_hypnos', 'treinamento', 'abandono', 'desespero'].includes(cmd)) {
+                    } 
+                    if (['preguiça', 'hypnos_rotina', 'violet_hypnos', 'treinamento', 'abandono', 'desespero'].includes(cmd)) {
                         checkHypnosAchievements();
+                    }
+                    if (cmd === 'orgulho') {
+                        unlockAchievement('O Primeiro Pecado');
+                    }
+                    if (cmd === 'pesquisador') {
+                        unlockAchievement('Arquitetor da Vida');
                     }
                 } else {
                     addLog(`Comando não encontrado: ${cmd}`, 'error');
@@ -3957,6 +4333,9 @@ function init() {
         'Tente "abel_filosofia" para compreender o peso da alma...',
         'Explore "abel_pacto" para o pacto com Violet...',
         'Conheça "abel_seraph" e a travessia da fada...',
+        'Use "meditar" para recuperar sanidade (risco)',
+        'Tente "purificar" para reduzir corrupção (risco)',
+        'Use "analyze sculk" para analisar dados'
     ];
 
     let phIndex = 0;
